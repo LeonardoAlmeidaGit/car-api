@@ -26,22 +26,4 @@ async def create_user(user: UserSchema):
     response_model=UserListPublicSchema,
 )
 async def list_users():
-    return {
-        'users': [
-            {
-                'id': 1,
-                'username': 'teste1',
-                'email': 'teste1@gmail.com',
-            },
-            {
-                'id': 2,
-                'username': 'test2',
-                'email': 'teste2@hotmail.com',
-            },
-            {
-                'id': 3,
-                'username': 'teste3',
-                'email': 'teste3@outlook.com',
-            }
-        ]
-    }
+    return {'users': USERS}
