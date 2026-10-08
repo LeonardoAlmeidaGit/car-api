@@ -1,23 +1,31 @@
 from fastapi import APIRouter, status
 
+from car_api.schemas.users import UserListPublicSchema
 
 router = APIRouter()
 
-@router.get('/', status_code=status.HTTP_200_OK)
+@router.get(
+    path='/',
+    status_code=status.HTTP_200_OK,
+    response_model=UserListPublicSchema,
+)
 async def list_users():
     return {
         'users': [
             {
                 'id': 1,
-                'e-mail': 'teste1@gmail.com',
+                'username': 'teste1',
+                'email': 'teste1@gmail.com',
             },
             {
                 'id': 2,
-                'e-mail': 'teste2@hotmail.com',
+                'username': 'test2',
+                'email': 'teste2@hotmail.com',
             },
             {
                 'id': 3,
-                'e-mail': 'teste3@outlook.com',
+                'username': 'teste3',
+                'email': 'teste3@outlook.com',
             }
         ]
     }
