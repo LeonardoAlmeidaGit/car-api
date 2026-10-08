@@ -5,6 +5,7 @@ from car_api.schemas.users import (
     UserSchema,
     UserPublicSchema,
     UserListPublicSchema,
+    UserUpdateSchema,
 )
 
 router = APIRouter()
@@ -27,3 +28,13 @@ async def create_user(user: UserSchema):
 )
 async def list_users():
     return {'users': USERS}
+
+@router.put(
+    path='/{user_id}',
+    status_code=status.HTTP_201_CREATED,
+    response_model=UserPublicSchema,
+)
+async def update_put_user(user_id: int, user: UserSchema):
+    user_with_id = UserPublicSchema(**user.model_dump(), id=user_id)
+    USERS[user_id - 1] = user_with_id
+    return user_with_id
