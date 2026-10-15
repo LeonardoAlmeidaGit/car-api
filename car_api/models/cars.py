@@ -1,12 +1,15 @@
 from datetime import datetime
 from decimal import Decimal
 from enum import Enum
-from typing import Optional
+from typing import TYPE_CHECKING, List, Optional
 
 from sqlalchemy import ForeignKey, String, Text, Numeric, Integer, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from car_api.models import Base
+
+if TYPE_CHECKING:
+    from car_api.models import User
 
 
 class FuelType(str, Enum):
@@ -35,6 +38,8 @@ class Brand(Base):
     created_at: Mapped[datetime] = mapped_column(server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(server_default=func.now(), onupdate=func.now())
 
+    cars: Mapped[List['Car']] = relationship('Car', back_populates='brand')
+
 
 class Car(Base):
     __tablename__ = 'cars'
@@ -50,5 +55,10 @@ class Car(Base):
     price: Mapped[Decimal] = mapped_column(Decimal(10, 2))
     description: Mapped[Optional[str]] = mapped_column(Text, default=None)
     is_available: Mapped[bool] = mapped_column(default=True)
+    brand_id: Mapped[int] = mapped_column(ForeignKey('brands.id'))
+    owner_id: Mapped[int] = mapped_column(ForeignKey('users.id'))
     created_at: Mapped[datetime] = mapped_column(server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(server_default=func.now(), onupdate=func.now())
+
+    brand: Mapped['Brand'] = relationship('Brand', back_populates='cars')
+    owner: Mapped['User'] = relationship('User', back_populates='cars')
