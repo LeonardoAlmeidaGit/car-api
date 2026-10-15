@@ -52,7 +52,7 @@ class Car(Base):
     plate: Mapped[str] = mapped_column(String(10), unique=True, index=True)
     fuel_type: Mapped[FuelType] = mapped_column(String(20))
     transmission_type: Mapped[TransmissionType] = mapped_column(String(20))
-    price: Mapped[Decimal] = mapped_column(Decimal(10, 2))
+    price: Mapped[Decimal] = mapped_column(Numeric(10, 2))
     description: Mapped[Optional[str]] = mapped_column(Text, default=None)
     is_available: Mapped[bool] = mapped_column(default=True)
     brand_id: Mapped[int] = mapped_column(ForeignKey('brands.id'))
