@@ -78,7 +78,21 @@ async def update_put_user(user_id: int, user: UserSchema):
 @router.delete(
     path='/{user_id}',
     status_code=status.HTTP_204_NO_CONTENT,
+    summary='Deletar usuário',
 )
-async def delete_user(user_id: int):
-    del USERS[user_id -1]
+async def delete_user(
+    user_id: int,
+    db: AsyncSession = Depends(get_session),
+):
+    user = await db.get(User, user_id)
+    
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail='Id de usuário não encontrado.'
+        )
+
+    await db.delete(user)
+    await db.commit()
+
     return
