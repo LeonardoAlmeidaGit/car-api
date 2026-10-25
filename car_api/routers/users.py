@@ -64,6 +64,28 @@ async def create_user(
 async def list_users():
     return {'users': USERS}
 
+
+@router.get(
+        path='/{user_id}',
+        status_code=status.HTTP_200_OK,
+        response_model=UserPublicSchema,
+        summary='Busca de usuário por ID',
+)
+async def get_user(
+    user_id: int,
+    db: AsyncSession = Depends(get_session),
+):
+    user = await db.get(User, user_id)
+
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail='Usuário não encontrado',
+        )
+
+    return user
+
+
 @router.put(
     path='/{user_id}',
     status_code=status.HTTP_201_CREATED,
