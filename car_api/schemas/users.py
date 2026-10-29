@@ -35,13 +35,13 @@ class UserUpdateSchema(BaseModel):
 
     @field_validator('username')
     def username_min_length(cls, v):
-        if len(v) < 5:
+        if v is not None and len(v) < 5:
             raise ValueError('Username deve ter pelo menos 5 caracteres')
         return v
     
     @field_validator('password')
     def password_min_length(cls, v):
-        if len(v) < 8:
+        if v is not None and len(v) < 8:
             raise ValueError('Senha deve ter pelo menos 8 caracteres')
         return v
 
