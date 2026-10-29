@@ -126,7 +126,7 @@ async def update_user(
             detail='Id de usuário não encontrado.'
         )
 
-    update_data = user_update.model_dump(exclude_unset=True)
+    update_data = user_update.model_dump(exclude_unset=True, exclude_none=True)
 
     if 'username' in update_data and update_data['username'] != user.username:
         username_exists = await db.scalar(
