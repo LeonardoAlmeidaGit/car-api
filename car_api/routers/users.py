@@ -107,18 +107,18 @@ async def get_user(
     return user
 
 
-@router.put(
+@router.patch(
     path='/{user_id}',
-    status_code=status.HTTP_201_CREATED,
+    status_code=status.HTTP_200_OK,
     response_model=UserPublicSchema,
     summary='Atualizar usuário',
 )
-async def update_put_user(
+async def update_user(
     user_id: int, 
     user_update: UserUpdateSchema,
     db: AsyncSession = Depends(get_session),
 ):
-    user = await db.get(user_id)
+    user = await db.get(User, user_id)
 
     if not user:
         raise HTTPException(
@@ -126,7 +126,7 @@ async def update_put_user(
             detail='Id de usuário não encontrado.'
         )
 
-    update_data = user_update.model_dump(exclude_unset=True)
+    update_data = user_update.model_dump(exclude_unset=True, exclude_none=True)
 
     if 'username' in update_data and update_data['username'] != user.username:
         username_exists = await db.scalar(
@@ -161,7 +161,7 @@ async def update_put_user(
         setattr(user, field, value)
 
     await db.commit()
-    await db.refresh()
+    await db.refresh(user)
 
     return user
 
