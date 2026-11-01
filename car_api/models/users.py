@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, List
 from sqlalchemy import func
 from sqlalchemy.orm import Mapped,mapped_column, relationship
 
-from car_api.models import Base
+from car_api.models.base import Base
 
 if TYPE_CHECKING:
     from car_api.models import Car
