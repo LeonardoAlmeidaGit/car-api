@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from car_api.core.database import get_session
 from car_api.core.security import get_current_user, get_password_hash, verify_user_yourself
+from car_api.models.cars import Car
 from car_api.models.users import User
 from car_api.schemas.users import (
     UserSchema,
@@ -190,6 +191,14 @@ async def delete_user(
         )
 
     verify_user_yourself(current_user, user_id)
+
+    has_cars = await db.scalar(select(exists().where(Car.owner_id == user_id)))
+
+    if has_cars:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail='Não é possível deletar usuário que possui carros associados.',
+        )
 
     await db.delete(user)
     await db.commit()
