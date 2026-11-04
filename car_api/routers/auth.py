@@ -1,4 +1,4 @@
-from fastapi import APIRouter, status, HTTPException, Depends
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from car_api.core.database import get_session
@@ -10,7 +10,6 @@ from car_api.core.security import (
 from car_api.models.users import User
 from car_api.schemas.auth import LoginRequest, Token
 
-
 router = APIRouter()
 
 
@@ -21,8 +20,7 @@ router = APIRouter()
     summary='Gerar token de acesso',
 )
 async def token(
-    login_data: LoginRequest,
-    db: AsyncSession = Depends(get_session)
+    login_data: LoginRequest, db: AsyncSession = Depends(get_session)
 ):
     user = await authenticate_user(login_data.email, login_data.password, db)
 
@@ -35,10 +33,7 @@ async def token(
 
     access_token = create_access_token(data={'sub': str(user.id)})
 
-    return {
-        'access_token': access_token,
-        'token_type': 'bearer'
-    }
+    return {'access_token': access_token, 'token_type': 'bearer'}
 
 
 @router.post(
@@ -50,7 +45,4 @@ async def token(
 async def refresh_token(current_user: User = Depends(get_current_user)):
     access_token = create_access_token(data={'sub': str(current_user.id)})
 
-    return {
-        'access_token': access_token,
-        'token_type': 'bearer'
-    }
+    return {'access_token': access_token, 'token_type': 'bearer'}
