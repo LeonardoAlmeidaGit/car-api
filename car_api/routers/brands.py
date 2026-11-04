@@ -5,7 +5,9 @@ from sqlalchemy import select, exists, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from car_api.models.cars import Brand, Car
-from car_api.core.database import get_session 
+from car_api.core.database import get_session
+from car_api.core.security import get_current_user
+from car_api.models.users import User
 from car_api.schemas.brands import (
     BrandSchema,
     BrandPublicSchema,
@@ -24,6 +26,7 @@ router = APIRouter()
 )
 async def create_brand(
         brand: BrandSchema,
+        current_user: User = Depends(get_current_user),
         db: AsyncSession = Depends(get_session),
 ):
     brand_name_exists = await db.scalar(
@@ -59,6 +62,7 @@ async def list_brands(
     limit: int = Query(100, ge=1, le=100, description='Limite de registros'),
     search: Optional[str] = Query(None, description='Buscar por nome da marca'),
     is_active: Optional[bool] = Query(None, description='Filtrar por marcas ativas'),
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_session),    
 ):
     query = select(Brand)
@@ -90,6 +94,7 @@ async def list_brands(
 )
 async def get_brand(
     brand_id: int,
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_session),    
 ):
     brand = await db.get(Brand, brand_id)
@@ -112,6 +117,7 @@ async def get_brand(
 async def update_brand(
     brand_id: int,
     brand_update: BrandUpdateSchema,
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_session),        
 ):
     brand = await db.get(Brand, brand_id)
@@ -153,6 +159,7 @@ async def update_brand(
 )
 async def delete_brand(
     brand_id: int,
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_session),
 ):
 

@@ -5,7 +5,8 @@ from sqlalchemy import select, exists
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from car_api.core.database import get_session
-from car_api.core.security import get_password_hash
+from car_api.core.security import get_current_user, get_password_hash, verify_user_yourself
+from car_api.models.cars import Car
 from car_api.models.users import User
 from car_api.schemas.users import (
     UserSchema,
@@ -67,6 +68,7 @@ async def list_users(
     offset: int = Query(0, ge=0, description='Número de registro para pular'),
     limit: int = Query(100, ge=1, le=100, description='Limite de registros'),
     search: Optional[str] = Query(None, description='Buscar por username ou email'),
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_session)
 ):
     query = select(User)
@@ -94,6 +96,7 @@ async def list_users(
 )
 async def get_user(
     user_id: int,
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_session),
 ):
     user = await db.get(User, user_id)
@@ -116,6 +119,7 @@ async def get_user(
 async def update_user(
     user_id: int, 
     user_update: UserUpdateSchema,
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_session),
 ):
     user = await db.get(User, user_id)
@@ -125,6 +129,8 @@ async def update_user(
             status_code=status.HTTP_404_NOT_FOUND,
             detail='Id de usuário não encontrado.'
         )
+
+    verify_user_yourself(current_user, user_id)
 
     update_data = user_update.model_dump(exclude_unset=True, exclude_none=True)
 
@@ -173,6 +179,7 @@ async def update_user(
 )
 async def delete_user(
     user_id: int,
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_session),
 ):
     user = await db.get(User, user_id)
@@ -181,6 +188,16 @@ async def delete_user(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail='Id de usuário não encontrado.'
+        )
+
+    verify_user_yourself(current_user, user_id)
+
+    has_cars = await db.scalar(select(exists().where(Car.owner_id == user_id)))
+
+    if has_cars:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail='Não é possível deletar usuário que possui carros associados.',
         )
 
     await db.delete(user)
