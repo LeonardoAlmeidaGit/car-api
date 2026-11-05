@@ -17,6 +17,8 @@ carros.
 - **Paginação**: `offset` e `limit` em todas as listagens, com até 100 registros
   por página.
 - **Documentação interativa**: Swagger UI e ReDoc gerados pelo FastAPI.
+- **Testes automatizados**: suíte com pytest sobre um SQLite em memória, com
+  cobertura acima de 80%.
 
 ## Regras de negócio
 
@@ -45,16 +47,18 @@ carros.
 | Token | PyJWT | 2.15.1 |
 | Lint e formatação | Ruff | 0.17.3 |
 | Tarefas | taskipy | 1.14.1 |
+| Testes | pytest / pytest-asyncio / pytest-cov | 9.2.0 / 1.4.1.post1 / 7.1.0 |
 | Documentação | MkDocs Material | 9.8.0 |
 
 ## Situação atual do projeto
 
+O projeto tem testes automatizados para todas as rotas, com 99% de cobertura.
+Veja [Testes](testing.md).
+
 Alguns itens comuns em projetos prontos para produção ainda não existem:
 
-- **Testes automatizados**: o diretório `tests/` está vazio. Veja
-  [Testes](testing.md).
-- **Docker e CI/CD**: o repositório não tem `Dockerfile` nem pipeline. Veja
-  [Deploy](deployment.md).
+- **Docker e CI/CD**: o repositório não tem `Dockerfile` nem pipeline, então os
+  testes só rodam localmente. Veja [Deploy](deployment.md).
 - **Perfis de acesso**: não há papel de administrador, por isso todo usuário
   autenticado tem as mesmas permissões sobre marcas.
 

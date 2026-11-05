@@ -20,6 +20,13 @@ poetry run alembic upgrade head
 poetry run task run
 ```
 
+Para rodar a suíte de testes, que usa um banco em memória e não altera o
+`car.db`:
+
+```bash
+poetry run task test
+```
+
 Com o servidor no ar:
 
 | Recurso | URL |
@@ -53,7 +60,8 @@ O passo a passo completo está em [Instalação](installation.md).
 
 - [Guidelines e padrões](guidelines.md): convenções de código e de API.
 - [Desenvolvimento](development.md): tarefas do dia a dia e migrações.
-- [Testes](testing.md): situação atual e como escrever os primeiros testes.
+- [Testes](testing.md): como rodar a suíte, fixtures, cobertura e como
+  escrever novos testes.
 - [Deploy](deployment.md): como publicar a aplicação.
 - [Contribuição](contributing.md): branches, commits e pull requests.
 - [Release Notes](release-notes.md): histórico de versões.

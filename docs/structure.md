@@ -32,18 +32,26 @@
 │   └── versions/
 │       ├── a22b0e6036d8_create_users_table.py
 │       └── 00b46928ad50_create_car_and_brand_tables.py
-├── tests/                    # Reservado para testes (apenas __init__.py)
-│   └── __init__.py
+├── tests/                    # Testes automatizados (pytest)
+│   ├── __init__.py
+│   ├── conftest.py           # Banco em memória, TestClient e fixtures de dados
+│   ├── test_auth.py          # Senhas, JWT, login, renovação e permissões
+│   ├── test_brands.py        # CRUD de marcas
+│   ├── test_cars.py          # CRUD de carros
+│   ├── test_db.py            # Conexão, tabelas e restrições do banco
+│   └── test_users.py         # CRUD de usuários
 ├── .vscode/settings.json     # Gerenciador de ambientes no VS Code
+├── .coverage                 # Dados de cobertura (não versionado)
 ├── .env                      # Configuração local (não versionado)
 ├── .env.example              # Modelo do .env
 ├── .gitignore
 ├── README.md                 # Atualmente vazio
 ├── alembic.ini               # Configuração do Alembic
 ├── car.db                    # Banco SQLite local (não versionado)
+├── htmlcov/                  # Relatório HTML de cobertura (não versionado)
 ├── mkdocs.yml                # Configuração da documentação
 ├── poetry.lock               # Versões travadas das dependências
-└── pyproject.toml            # Metadados, dependências, Ruff e taskipy
+└── pyproject.toml            # Metadados, dependências, Ruff, pytest, coverage e taskipy
 ```
 
 Os diretórios `core/`, `routers/` e `schemas/` não têm `__init__.py`. Eles
@@ -86,6 +94,12 @@ Define a classe `Settings`. Veja [Configuração](configuration.md).
 | `a22b0e6036d8` | Nenhuma | Cria a tabela `users` |
 | `00b46928ad50` | `a22b0e6036d8` | Cria as tabelas `brands` e `cars` e o índice único `ix_cars_plate` |
 
+### `tests/conftest.py`
+
+Cria o banco SQLite em memória, substitui a dependência `get_session` no
+`TestClient` e define as fixtures de usuários, tokens, marcas e carros usadas
+pelos testes. Veja [Testes](testing.md#fixtures-disponiveis).
+
 ## Onde alterar cada coisa
 
 | Para... | Altere |
@@ -95,5 +109,6 @@ Define a classe `Settings`. Veja [Configuração](configuration.md).
 | Mudar uma tabela | `car_api/models/` e crie uma migração |
 | Adicionar uma configuração | `car_api/core/settings.py` e `.env.example` |
 | Mudar uma regra de permissão | `car_api/core/security.py` |
+| Adicionar um teste | `tests/test_<recurso>.py`; fixtures compartilhadas em `tests/conftest.py` |
 | Adicionar uma tarefa | `[tool.taskipy.tasks]` em `pyproject.toml` |
 | Adicionar uma página de documentação | `docs/` e `nav` em `mkdocs.yml` |

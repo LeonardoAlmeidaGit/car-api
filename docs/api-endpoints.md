@@ -207,14 +207,18 @@ com as mesmas regras da criação. Uma nova senha é armazenada como hash.
 | `400` | `O email já está em uso` |
 | `403` | `Not enough permissions to access this user` |
 | `404` | `Id de usuário não encontrado.` |
+| `422` | Dados inválidos |
+
+Enviar o próprio `username` ou `email` atual não é considerado duplicidade.
 
 ### `DELETE /api/v1/users/{user_id}`
 
-Só exclui a própria conta. Resposta `204`, sem corpo.
+Só exclui a própria conta. Resposta `204`, sem corpo. Depois da exclusão, os
+tokens emitidos para a conta deixam de ser aceitos.
 
-| Status | Causa |
+| Status | `detail` |
 | --- | --- |
-| `400` | O usuário ainda possui carros |
+| `400` | `Não é possível deletar usuário que possui carros associados.` |
 | `403` | `Not enough permissions to access this user` |
 | `404` | `Id de usuário não encontrado.` |
 
@@ -277,20 +281,22 @@ Resposta `200` ou `404` (`Marca não encontrada`).
 
 ### `PATCH /api/v1/brands/{brand_id}`
 
-Campos opcionais: `name`, `description` e `is_active`.
+Campos opcionais: `name`, `description` e `is_active`, com as mesmas regras da
+criação. Manter o nome atual não é considerado duplicidade.
 
 | Status | `detail` |
 | --- | --- |
 | `400` | `Nome da marca já está em uso` |
 | `404` | `Marca não encontrada` |
+| `422` | Dados inválidos |
 
 ### `DELETE /api/v1/brands/{brand_id}`
 
 Resposta `204`, sem corpo.
 
-| Status | Causa |
+| Status | `detail` |
 | --- | --- |
-| `400` | A marca possui carros associados |
+| `400` | `Não é possível deletar marca que possui carros associados.` |
 | `404` | `Marca não encontrada.` |
 
 ---
@@ -385,6 +391,11 @@ Resposta `201`.
 | `404` | `Marca não encontrada` |
 | `422` | Dados inválidos |
 
+> **Nota:** O código também verifica se o proprietário existe e responde
+> `404 Proprietário não encontrado`, mas esse caso não ocorre na prática: a
+> verificação de `403` vem antes e exige que `owner_id` seja o usuário
+> autenticado.
+
 ### `GET /api/v1/cars/`
 
 Lista os carros de todos os usuários. Além da paginação, aceita os filtros
@@ -432,6 +443,7 @@ de escrita.
 | `404` | `Carro não encontrado` |
 | `404` | `Marca não encontrada` |
 | `404` | `Proprietário não encontrado` |
+| `422` | Dados inválidos |
 
 ### `DELETE /api/v1/cars/{car_id}`
 

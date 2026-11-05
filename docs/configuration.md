@@ -60,6 +60,8 @@ Configurado em `pyproject.toml`:
 | Modo `preview` | Ativo no lint e na formatação |
 | Excluídos | `migrations/`, ambientes virtuais e diretórios de cache e build, entre outros |
 
+As regras `PT` (flake8-pytest-style) se aplicam aos arquivos em `tests/`.
+
 ## taskipy
 
 Atalhos definidos em `[tool.taskipy.tasks]`:
@@ -70,10 +72,30 @@ Atalhos definidos em `[tool.taskipy.tasks]`:
 | `task lint` | `ruff check` |
 | `task pre_format` | `ruff check --fix` |
 | `task format` | `ruff format` |
+| `task pre_test` | `task lint` |
+| `task test` | `pytest -s -x --cov=car_api -vv` |
+| `task post_test` | `coverage html` |
 | `task docs` | `mkdocs serve -a 127.0.0.1:8001` |
 
-Como `pre_format` usa o prefixo reconhecido pelo taskipy, ele roda
-automaticamente antes de `task format`.
+O taskipy executa automaticamente as tarefas com os prefixos `pre_` e `post_`:
+
+- `task format` roda antes o `pre_format`, que aplica as correções do Ruff.
+- `task test` roda antes o `pre_test`, que executa o lint, e depois o
+  `post_test`, que gera o relatório HTML de cobertura. Se o lint falhar, os
+  testes não são executados.
+
+## pytest e coverage
+
+Configurados em `[tool.pytest.ini_options]` e `[tool.coverage.run]`:
+
+| Opção | Valor | Motivo |
+| --- | --- | --- |
+| `pythonpath` | `"."` | Permite importar `car_api` nos testes |
+| `filterwarnings` | Ignora `StarletteDeprecationWarning` | O aviso sobre `httpx` no `TestClient` não afeta os testes |
+| `asyncio_default_fixture_loop_scope` | `'function'` | Um *event loop* por teste |
+| `concurrency` (coverage) | `["thread", "greenlet"]` | Mede as linhas executadas pelo SQLAlchemy assíncrono e pelo `TestClient` |
+
+Os detalhes estão em [Testes](testing.md#configuracao).
 
 ## MkDocs
 
