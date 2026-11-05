@@ -3,7 +3,7 @@ from decimal import Decimal
 from enum import Enum
 from typing import TYPE_CHECKING, List, Optional
 
-from sqlalchemy import ForeignKey, String, Text, Numeric, Integer, func
+from sqlalchemy import ForeignKey, Integer, Numeric, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from car_api.models.base import Base
@@ -36,7 +36,9 @@ class Brand(Base):
     is_active: Mapped[bool] = mapped_column(default=True)
     description: Mapped[Optional[str]] = mapped_column(Text, default=None)
     created_at: Mapped[datetime] = mapped_column(server_default=func.now())
-    updated_at: Mapped[datetime] = mapped_column(server_default=func.now(), onupdate=func.now())
+    updated_at: Mapped[datetime] = mapped_column(
+        server_default=func.now(), onupdate=func.now()
+    )
 
     cars: Mapped[List['Car']] = relationship('Car', back_populates='brand')
 
@@ -58,7 +60,9 @@ class Car(Base):
     brand_id: Mapped[int] = mapped_column(ForeignKey('brands.id'))
     owner_id: Mapped[int] = mapped_column(ForeignKey('users.id'))
     created_at: Mapped[datetime] = mapped_column(server_default=func.now())
-    updated_at: Mapped[datetime] = mapped_column(server_default=func.now(), onupdate=func.now())
+    updated_at: Mapped[datetime] = mapped_column(
+        server_default=func.now(), onupdate=func.now()
+    )
 
     brand: Mapped['Brand'] = relationship('Brand', back_populates='cars')
     owner: Mapped['User'] = relationship('User', back_populates='cars')

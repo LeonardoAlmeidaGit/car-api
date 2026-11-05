@@ -1,20 +1,20 @@
-from typing import Optional 
-from fastapi import APIRouter, status, HTTPException, Depends, Query
+from typing import Optional
+
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+from sqlalchemy import exists, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, exists, func
 from sqlalchemy.orm import selectinload
 
 from car_api.core.database import get_session
 from car_api.core.security import get_current_user, verify_car_ownership
-from car_api.models.cars import Car, Brand, FuelType, TransmissionType
+from car_api.models.cars import Brand, Car, FuelType, TransmissionType
 from car_api.models.users import User
 from car_api.schemas.cars import (
-    CarSchema,
     CarListPublicSchema,
     CarPublicSchema,
+    CarSchema,
     CarUpdateSchema,
 )
-
 
 router = APIRouter()
 
@@ -31,14 +31,14 @@ async def create_car(
     db: AsyncSession = Depends(get_session),
 ):
     verify_car_ownership(current_user, car.owner_id)
-    
+
     plate_exists = await db.scalar(
         select(exists().where(Car.plate == car.plate))
     )
     if plate_exists:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail='Placa já está em uso'
+            detail='Placa já está em uso',
         )
 
     brand_exists = await db.scalar(
@@ -47,7 +47,7 @@ async def create_car(
     if not brand_exists:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail='Marca não encontrada'
+            detail='Marca não encontrada',
         )
 
     owner_exists = await db.scalar(
@@ -56,7 +56,7 @@ async def create_car(
     if not owner_exists:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail='Proprietário não encontrado'
+            detail='Proprietário não encontrado',
         )
 
     db_car = Car(
@@ -71,7 +71,7 @@ async def create_car(
         description=car.description,
         is_available=car.is_available,
         brand_id=car.brand_id,
-        owner_id=car.owner_id
+        owner_id=car.owner_id,
     )
 
     db.add(db_car)
@@ -97,25 +97,37 @@ async def create_car(
 async def list_cars(
     offset: int = Query(0, ge=0, description='Número de registros para pular'),
     limit: int = Query(100, ge=1, le=100, description='Limite de registros'),
-    search: Optional[str] = Query(None, description='Filtrar por modelo, cor ou placa'),
+    search: Optional[str] = Query(
+        None, description='Filtrar por modelo, cor ou placa'
+    ),
     brand_id: Optional[int] = Query(None, description='Filtrar por marca'),
-    owner_id: Optional[int] = Query(None, description='Filtrar por proprietário'),
-    fuel_type: Optional[FuelType] = Query(None, description='Filtrar por tipo de combustão'),
-    transmission_type: Optional[TransmissionType] = Query(None, description='Filtrar por tipo de transmissão'),
-    is_available: Optional[bool] = Query(None, description='Filtrar por disponibilidade'),
+    owner_id: Optional[int] = Query(
+        None, description='Filtrar por proprietário'
+    ),
+    fuel_type: Optional[FuelType] = Query(
+        None, description='Filtrar por tipo de combustão'
+    ),
+    transmission_type: Optional[TransmissionType] = Query(
+        None, description='Filtrar por tipo de transmissão'
+    ),
+    is_available: Optional[bool] = Query(
+        None, description='Filtrar por disponibilidade'
+    ),
     min_price: Optional[float] = Query(None, ge=0, description='Preço mínimo'),
     max_price: Optional[float] = Query(None, ge=0, description='Preço máximo'),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_session),
 ):
-    query = select(Car).options(selectinload(Car.brand), selectinload(Car.owner))
+    query = select(Car).options(
+        selectinload(Car.brand), selectinload(Car.owner)
+    )
 
     if search:
         search_filter = f'%{search}%'
         query = query.where(
-            (Car.model.ilike(search_filter)) |
-            (Car.color.ilike(search_filter)) |
-            (Car.plate.ilike(search_filter))
+            (Car.model.ilike(search_filter))
+            | (Car.color.ilike(search_filter))
+            | (Car.plate.ilike(search_filter))
         )
 
     if brand_id is not None:
@@ -144,11 +156,7 @@ async def list_cars(
     result = await db.execute(query)
     cars = result.scalars().all()
 
-    return {
-        'cars': cars,
-        'offset': offset,
-        'limit': limit
-    }
+    return {'cars': cars, 'offset': offset, 'limit': limit}
 
 
 @router.get(
@@ -172,7 +180,7 @@ async def get_car(
     if not car:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail='Carro não encontrado'
+            detail='Carro não encontrado',
         )
 
     return car
@@ -260,19 +268,17 @@ async def update_car(
 async def delete_car(
     car_id: int,
     current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_session)
+    db: AsyncSession = Depends(get_session),
 ):
     car = await db.get(Car, car_id)
 
     if not car:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail='Carro não encontrado'
+            detail='Carro não encontrado',
         )
 
     verify_car_ownership(current_user, car.owner_id)
 
     await db.delete(car)
     await db.commit()
-
-    return

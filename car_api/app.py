@@ -1,7 +1,6 @@
 from fastapi import FastAPI, status
 
-from car_api.routers import auth, users, brands, cars
-
+from car_api.routers import auth, brands, cars, users
 
 app = FastAPI()
 
@@ -28,6 +27,7 @@ app.include_router(
     prefix='/api/v1/cars',
     tags=['cars'],
 )
+
 
 @app.get('/health_check', status_code=status.HTTP_200_OK)
 def health_check():
