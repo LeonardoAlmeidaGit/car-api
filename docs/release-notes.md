@@ -11,9 +11,25 @@ Alterações já feitas depois do commit que define a versão 0.3.0.
 ### Adicionado
 
 - Ruff para lint e formatação, e taskipy para tarefas (#20).
-- MkDocs Material e extensões para a documentação.
-- Configuração do MkDocs (`mkdocs.yml`) e tarefa `task docs`.
-- Documentação do projeto em `docs/`.
+- MkDocs Material e extensões para a documentação (#21).
+- Configuração do MkDocs (`mkdocs.yml`) e tarefa `task docs` (#21).
+- Documentação do projeto em `docs/` (#21).
+- Suíte de testes com pytest, pytest-asyncio e pytest-cov, executada em um
+  SQLite em memória: 163 testes e 99% de cobertura (#22).
+- Tarefa `task test`, que roda o lint antes dos testes e gera o relatório HTML
+  de cobertura depois (#22).
+- Configuração do pytest e do coverage no `pyproject.toml` (#22).
+
+### Alterado
+
+- O aviso `StarletteDeprecationWarning` do `TestClient` passa a ser filtrado na
+  configuração do pytest (#23).
+- Documentação revisada para refletir a suíte de testes.
+
+### Corrigido
+
+- Espaço ausente nas mensagens de erro ao excluir usuário ou marca com carros
+  associados, que exibiam "usuárioque" e "marcaque" (#22).
 
 ## 0.3.0 (2026-11-03)
 

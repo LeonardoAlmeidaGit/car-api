@@ -152,4 +152,20 @@ em produção.
 - *Rate limit* em `/auth/token` e no cadastro
 - CORS restrito às origens necessárias
 - Decisão sobre quem pode alterar marcas e ver e-mails
-- Testes automatizados de autenticação e permissões
+- `task test` passando na versão publicada
+
+## Cobertura por testes
+
+Os mecanismos desta página são verificados em `tests/test_auth.py` e nos testes
+de permissão de cada recurso:
+
+| Mecanismo | Cenários testados |
+| --- | --- |
+| Senhas | Hash Argon2, verificação correta e incorreta, hash gravado no cadastro e na troca de senha |
+| Emissão de token | Claims `sub` e `exp`, login com e-mail inexistente e senha errada, cabeçalho `WWW-Authenticate` |
+| Validação de token | Token expirado, malformado, com assinatura de outra chave, sem `sub`, com `sub` vazio ou não numérico, de usuário inexistente ou excluído |
+| Transporte | Cabeçalho ausente e esquema diferente de `Bearer` |
+| Renovação | Token válido, ausente e expirado |
+| Permissões | Alterar ou excluir a conta e o carro de outro usuário; criar carro para outro dono |
+
+Veja [Testes](testing.md).

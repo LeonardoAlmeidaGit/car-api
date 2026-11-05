@@ -217,6 +217,11 @@ sequenceDiagram
     R-->>C: 201 CarPublicSchema
 ```
 
+> **Nota:** A checagem de proprietário existe no código, mas nunca devolve
+> `404`: como `verify_car_ownership` já exige que `owner_id` seja o usuário
+> autenticado, o proprietário sempre existe. Por isso essa é a única linha das
+> rotas sem cobertura de testes.
+
 ### Listar e buscar
 
 ```mermaid

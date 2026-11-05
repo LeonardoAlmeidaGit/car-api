@@ -9,7 +9,8 @@
 ## Antes de publicar
 
 1. Confira o [checklist de segurança](authentication.md#checklist-para-producao).
-2. Defina a versão a publicar.
+2. Defina a versão a publicar e rode `poetry run task test` nela. Como não há
+   CI, essa verificação é manual.
 3. Avalie o banco de dados, como descrito a seguir.
 
 ## Banco de dados
@@ -24,8 +25,11 @@ Para usar outro banco, como PostgreSQL:
 2. Ajuste a URL: `postgresql+asyncpg://usuario:senha@host:5432/car_api`.
 3. Valide as migrações e a aplicação nesse banco.
 
-> **Nota:** O projeto só foi executado com SQLite até agora. Outros bancos exigem testes
-> próprios.
+> **Nota:** O projeto só foi executado com SQLite até agora, e a suíte de testes
+> também usa SQLite, em memória. Ela não detecta diferenças de outros bancos,
+> como o limite de `String(n)`, que o SQLite não aplica, ou a busca sem
+> diferenciar maiúsculas, que no SQLite só vale para letras sem acento. Valide
+> esses pontos à parte.
 
 ## Passos
 
