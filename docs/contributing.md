@@ -9,6 +9,7 @@
 | `feature/<descrição>` | Nova funcionalidade |
 | `fix/<descrição>` | Correção de erro |
 | `chore/<descrição>` | Manutenção, ferramentas e versão |
+| `test/<descrição>` | Testes automatizados |
 | `docs/<descrição>` | Documentação |
 
 ```mermaid
@@ -30,14 +31,16 @@ flowchart LR
 
 2. Faça a alteração, seguindo as [guidelines](guidelines.md). Se mudar um modelo,
    inclua a migração.
-3. Valide:
+3. Escreva ou atualize os testes, como descrito em [Testes](testing.md).
+4. Valide:
 
     ```bash
     poetry run task format
-    poetry run task lint
+    poetry run task test
     ```
 
-4. Teste as rotas afetadas, como descrito em [Testes](testing.md).
+    O `task test` executa o lint antes dos testes e para no primeiro erro.
+
 5. Atualize a documentação em `docs/`, se necessário.
 6. Faça o commit, envie a branch e abra um pull request para `develop`.
 
@@ -57,15 +60,18 @@ em inglês:
 | `fix` | Correção de erro | `fix: correct user update endpoint` |
 | `chore` | Manutenção, ferramentas e versão | `chore: bump version to 0.3.0` |
 | `docs` | Documentação | `docs: add mkdocs configuration` |
-| `build` | Sistema de build e dependências | `build(deps): add mkdocs and extensions to project` |
+| `test` | Testes automatizados | `test: add unit tests with pytest` |
+| `style` | Formatação, sem mudança de comportamento | `style: apply ruff format and lint fixes` |
+| `build` | Sistema de build e dependências | `build(deps): add pytest and coverage` |
 
 ## Pull requests
 
 Antes de pedir revisão, confira:
 
 - O título segue o padrão de commits.
-- `task lint` passa sem erros.
-- As rotas afetadas foram testadas.
+- `task test` passa sem erros, incluindo o lint.
+- O comportamento novo ou alterado tem testes, e a cobertura continua acima
+  de 80%.
 - Mudanças em modelos incluem migração.
 - Nenhum segredo ou banco de dados foi incluído no commit.
 - A documentação foi atualizada.

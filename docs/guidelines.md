@@ -15,7 +15,7 @@ Antes de abrir um pull request:
 
 ```bash
 poetry run task format
-poetry run task lint
+poetry run task test   # executa o lint antes dos testes
 ```
 
 ## Organização em camadas
@@ -113,9 +113,7 @@ async def get_brand(
 Verifique a duplicidade antes de gravar:
 
 ```python
-plate_exists = await db.scalar(
-    select(exists().where(Car.plate == car.plate))
-)
+plate_exists = await db.scalar(select(exists().where(Car.plate == car.plate)))
 ```
 
 Em atualizações, aplique somente os campos enviados:
@@ -144,6 +142,22 @@ devolve esses valores na resposta.
 - Não edite uma migração que já foi publicada; crie outra.
 
 O passo a passo está em [Desenvolvimento](development.md#migracoes).
+
+## Testes
+
+- Toda rota nova ou alterada precisa de testes para o sucesso e para cada erro
+  que ela pode devolver.
+- Testes ficam em `tests/test_<recurso>.py`, com fixtures compartilhadas em
+  `tests/conftest.py`.
+- Use `http.HTTPStatus` nas asserções de status e compare a mensagem de erro
+  exata em `detail`.
+- Mantenha a cobertura acima de 80%. A meta não é verificada automaticamente:
+  confira o total no final de `task test`.
+- Ao mudar uma mensagem de erro, atualize também os testes e a página
+  [API Endpoints](api-endpoints.md).
+
+As convenções completas e exemplos estão em
+[Testes](testing.md#escrevendo-novos-testes).
 
 ## Commits e branches
 

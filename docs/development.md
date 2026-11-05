@@ -7,6 +7,7 @@
 | `poetry run task run` | Inicia a API com recarregamento automático na porta 8000 |
 | `poetry run task lint` | Verifica o código com o Ruff |
 | `poetry run task format` | Aplica correções automáticas e formata o código |
+| `poetry run task test` | Roda o lint, os testes com cobertura e gera `htmlcov/` |
 | `poetry run task docs` | Serve a documentação na porta 8001 |
 
 Para não repetir `poetry run`, ative o ambiente virtual:
@@ -21,9 +22,10 @@ task run
 1. Crie uma branch a partir de `develop`, como descrito em
    [Contribuição](contributing.md).
 2. Faça a alteração, seguindo as [guidelines](guidelines.md).
-3. Teste manualmente em `/docs`.
+3. Escreva ou atualize os testes do comportamento alterado, como descrito em
+   [Testes](testing.md#escrevendo-novos-testes).
 4. Se alterou um modelo, crie a migração.
-5. Rode `task format` e `task lint`.
+5. Rode `task format` e `task test`. O `task test` já executa o lint.
 6. Atualize a documentação, se necessário.
 7. Abra um pull request para `develop`.
 
@@ -87,7 +89,11 @@ Exemplo de passo a passo para um recurso chamado `dealers`:
     )
     ```
 
-6. **Documentação**: atualize [API Endpoints](api-endpoints.md) e o diagrama em
+6. **Testes**: crie `tests/test_dealers.py` e, se necessário, uma fixture
+   `dealer` em `tests/conftest.py`. O banco de testes é criado a partir de
+   `Base.metadata`, então o novo modelo entra automaticamente, desde que esteja
+   exportado em `car_api/models/__init__.py`.
+7. **Documentação**: atualize [API Endpoints](api-endpoints.md) e o diagrama em
    [Modelagem do Sistema](system-modeling.md).
 
 ## Dependências

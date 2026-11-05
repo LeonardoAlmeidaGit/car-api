@@ -16,7 +16,8 @@ poetry install
 ```
 
 O comando cria um ambiente virtual e instala as dependências principais e as de
-desenvolvimento (Ruff, taskipy e MkDocs).
+desenvolvimento: Ruff, taskipy, MkDocs, pytest-asyncio e pytest-cov. O pytest
+é instalado como dependência desses dois últimos.
 
 ## 3. Criar o arquivo `.env`
 
@@ -60,6 +61,15 @@ Resposta esperada:
 ```json
 {"message": "ok"}
 ```
+
+## 7. Rodar os testes (opcional)
+
+```bash
+poetry run task test
+```
+
+Todos os testes devem passar. Eles usam um banco em memória e não alteram o
+`car.db`. Detalhes em [Testes](testing.md).
 
 ## Primeiras requisições
 
