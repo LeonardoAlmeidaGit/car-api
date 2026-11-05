@@ -187,7 +187,8 @@ async def delete_brand(
     if cars_count > 0:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail='Não é possível deletar marcaque possui carros associados.',
+            detail='Não é possível deletar marca '
+            'que possui carros associados.',
         )
 
     await db.delete(brand)
