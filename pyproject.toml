@@ -29,7 +29,9 @@ dev = [
     "taskipy (>=1.14.1,<2.0.0)",
     "mkdocs (>=1.6.1,<2.0.0)",
     "mkdocs-material (>=9.8.0,<10.0.0)",
-    "pymdown-extensions (>=12.3,<13.0)"
+    "pymdown-extensions (>=12.3,<13.0)",
+    "pytest-asyncio (>=1.4.1.post1,<2.0.0)",
+    "pytest-cov (>=7.1.0,<8.0.0)"
 ]
 
 [tool.ruff]
@@ -76,9 +78,20 @@ ignore = ['PLR2004', 'PLR0917', 'PLR0913']
 preview = true
 quote-style = 'single'
 
+[tool.pytest.ini_options]
+pythonpath = "."
+addopts = '-p no:warning'
+asyncio_default_fixture_loop_scope = 'function'
+
+[tool.coverage.run]
+concurrency = ["thread", "greenlet"]
+
 [tool.taskipy.tasks]
 lint = 'ruff check'
 pre_format = 'ruff check --fix'
 format = 'ruff format'
 run = 'fastapi dev car_api/app.py'
+pre_test = 'task lint'
+test = 'pytest -s -x --cov=car_api -vv'
+post_test = 'coverage html'
 docs = 'mkdocs serve -a 127.0.0.1:8001'
