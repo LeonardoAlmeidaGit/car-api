@@ -80,7 +80,9 @@ quote-style = 'single'
 
 [tool.pytest.ini_options]
 pythonpath = "."
-addopts = '-p no:warning'
+filterwarnings = [
+    'ignore::starlette.exceptions.StarletteDeprecationWarning',
+]
 asyncio_default_fixture_loop_scope = 'function'
 
 [tool.coverage.run]
