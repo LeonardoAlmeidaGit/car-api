@@ -41,11 +41,11 @@ services:
       timeout: 5s
       retries: 10
   
-  mkdocks:
+  mkdocs:
     build:
       context: .
       dockerfile: Dockerfile.mkdocs
-    image: car-api-mkdocks:latest
+    image: car-api-mkdocs:latest
     ports:
       - "8001:80"
 
