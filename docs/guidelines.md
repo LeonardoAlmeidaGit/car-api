@@ -40,6 +40,32 @@ Cada recurso segue o mesmo padrão de nomes:
 | `PublicSchema` | Resposta com um registro | `CarPublicSchema` |
 | `ListPublicSchema` | Resposta paginada | `CarListPublicSchema` |
 
+### Limites iguais aos do banco
+
+Todo campo de texto gravado em uma coluna `String(n)` declara `max_length=n` no
+schema, e todo `Numeric(p, s)` declara `max_digits=p` e `decimal_places=s`. Sem
+isso, o PostgreSQL recusa o valor e a API responde `500` em vez de `422`. Os
+testes rodam em SQLite, que não aplica esses limites, então o schema é a única
+proteção verificada pela suíte.
+
+```python
+class CarSchema(BaseModel):
+    model: str = Field(max_length=100)
+    price: Decimal = Field(max_digits=10, decimal_places=2)
+
+
+class CarUpdateSchema(BaseModel):
+    model: Optional[str] = Field(default=None, max_length=100)
+    price: Optional[Decimal] = Field(
+        default=None, max_digits=10, decimal_places=2
+    )
+```
+
+Declare o limite nos dois schemas, o de criação e o de atualização. Ao mudar o
+tamanho de uma coluna em uma migração, atualize o schema no mesmo pull request.
+
+### Validadores
+
 Validações usam `@field_validator` e ficam no schema, não na rota. Em
 `UpdateSchema`, o validador precisa aceitar `None`:
 
@@ -139,6 +165,7 @@ devolve esses valores na resposta.
 
 - Toda mudança em modelo exige uma migração.
 - Revise o arquivo gerado antes de aplicá-lo.
+- Aplique a migração no PostgreSQL local antes de abrir o pull request.
 - Não edite uma migração que já foi publicada; crie outra.
 
 O passo a passo está em [Desenvolvimento](development.md#migracoes).
@@ -151,6 +178,8 @@ O passo a passo está em [Desenvolvimento](development.md#migracoes).
   `tests/conftest.py`.
 - Use `http.HTTPStatus` nas asserções de status e compare a mensagem de erro
   exata em `detail`.
+- Para cada `max_length` ou `max_digits`, teste o valor no limite, que deve ser
+  aceito, e o valor logo acima, que deve ser recusado com `422`.
 - Mantenha a cobertura acima de 80%. A meta não é verificada automaticamente:
   confira o total no final de `task test`.
 - Ao mudar uma mensagem de erro, atualize também os testes e a página
