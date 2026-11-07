@@ -3,7 +3,7 @@ name = "car-api"
 version = "0.3.1"
 description = ""
 authors = [
-    {name = "Your Name",email = "you@example.com"}
+    {name = "Leonardo Almeida",email = "leonardocalmeida.dev@gmail.com"}
 ]
 readme = "README.md"
 requires-python = ">=3.14,<4.0"
