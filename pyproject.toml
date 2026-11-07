@@ -1,6 +1,6 @@
 [project]
 name = "car-api"
-version = "0.3.1"
+version = "0.4.0"
 description = ""
 authors = [
     {name = "Leonardo Almeida",email = "leonardocalmeida.dev@gmail.com"}

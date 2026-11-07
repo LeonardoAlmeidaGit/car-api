@@ -4,9 +4,50 @@ O formato é inspirado no [Keep a Changelog](https://keepachangelog.com/pt-BR/),
 as versões seguem o [Versionamento Semântico](https://semver.org/lang/pt-BR/). As
 informações vêm das tags e do histórico do Git.
 
-## Não lançado
+## 0.4.0 (2026-11-07)
 
-Alterações já feitas depois do commit que define a versão 0.3.0.
+Docker, PostgreSQL e limites de tamanho nos schemas.
+
+### Adicionado
+
+- Ambiente Docker: `Dockerfile` da API, `Dockerfile.mkdocs` da documentação e
+  `docker-compose.yml` com os serviços `db`, `migrations`, `app` e `mkdocs`
+  (#27).
+- `.dockerignore`, que mantém segredos, caches, testes e o `car.db` fora das
+  imagens (#27).
+- Configuração do Read the Docs (`.readthedocs.yaml`) e `requirements_docs.txt`
+  com as versões da documentação (#27).
+- Variáveis `DB_NAME`, `DB_USER` e `DB_PASSWORD` no `.env.example`, usadas pelo
+  Compose (#27).
+- Testes dos limites de tamanho e de precisão nos schemas: 181 testes no total
+  (#28).
+- Página [Docker](docker.md) na documentação.
+- README do projeto, com resumo, tecnologias e como rodar.
+
+### Alterado
+
+- Banco de dados da aplicação passa de SQLite para **PostgreSQL 17.6**, com o
+  driver psycopg 3 (#27). Os testes continuam em SQLite em memória.
+- Documentação revisada para o PostgreSQL e o Docker: instalação, configuração,
+  deploy, desenvolvimento, testes, estrutura e diagramas.
+
+### Corrigido
+
+- Textos e preços acima do tamanho das colunas eram enviados ao banco e, no
+  PostgreSQL, resultavam em `500`. Agora os schemas aplicam os limites e a API
+  responde `422`: `username` até 30 caracteres, nome da marca até 50, modelo
+  até 100, cor até 30 e preço com até 10 dígitos e 2 casas decimais (#28).
+
+### Mudanças incompatíveis
+
+- `DATABASE_URL` passa a apontar para o PostgreSQL. Atualize o `.env` com base
+  no `.env.example`. Os dados do `car.db` não são migrados automaticamente.
+- Requisições com valores acima dos novos limites, antes aceitas no SQLite,
+  passam a receber `422`.
+
+## 0.3.1 (2026-11-05)
+
+Ferramentas de qualidade, documentação e testes automatizados.
 
 ### Adicionado
 
@@ -24,7 +65,8 @@ Alterações já feitas depois do commit que define a versão 0.3.0.
 
 - O aviso `StarletteDeprecationWarning` do `TestClient` passa a ser filtrado na
   configuração do pytest (#23).
-- Documentação revisada para refletir a suíte de testes.
+- Documentação revisada para refletir a suíte de testes (#24).
+- Versão atualizada para 0.3.1 (#25).
 
 ### Corrigido
 
