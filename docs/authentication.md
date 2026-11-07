@@ -96,11 +96,16 @@ As duas respondem `403` quando não há permissão.
 
 - **SQL injection**: as consultas usam parâmetros do SQLAlchemy, inclusive nos
   filtros de busca.
-- **Validação de entrada**: todo corpo e parâmetro passa pelo Pydantic.
+- **Validação de entrada**: todo corpo e parâmetro passa pelo Pydantic,
+  inclusive o tamanho máximo dos textos e a precisão do preço, iguais aos das
+  colunas do banco.
 - **Exposição de dados**: `response_model` limita os campos devolvidos.
 - **Integridade**: o banco mantém restrições de unicidade e chaves estrangeiras
   declaradas no esquema.
-- **Segredos**: `.env` e `*.db` estão no `.gitignore`.
+- **Segredos**: `.env` e `*.db` estão no `.gitignore`, e o `.env` também está
+  no `.dockerignore`, então não entra nas imagens.
+- **Contêineres**: a API roda como o usuário sem privilégios `car_api`, e o
+  PostgreSQL só é publicado em `127.0.0.1`.
 
 ## Limitações conhecidas
 
@@ -142,12 +147,17 @@ em produção.
 | CORS não configurado | Frontends de outra origem são bloqueados pelo navegador | Adicionar `CORSMiddleware` com origens explícitas |
 | Swagger e ReDoc sempre ativos | A estrutura da API fica pública em produção | Desativá-los por configuração, se necessário |
 | Unicidade checada antes de gravar, sem tratar `IntegrityError` | Requisições simultâneas podem gerar `500` em vez de `400` | Tratar a exceção na gravação |
-| Schemas não limitam o tamanho máximo dos textos | O SQLite não aplica o limite de `String(n)`; outros bancos podem recusar e gerar `500` | Usar `max_length` nos schemas |
+| `email` e `password` sem tamanho máximo | Corpos muito grandes são aceitos, e calcular o Argon2 de uma senha enorme consome CPU | Definir `max_length` nos dois campos |
+| API publicada em `0.0.0.0:8000` no Compose | A porta fica acessível sem passar pelo proxy com HTTPS | Publicar em `127.0.0.1` ou bloquear no firewall |
+| Credenciais de exemplo no `.env.example` | Um `.env` copiado sem alteração usa senha e chave conhecidas | Trocar `JWT_SECRET_KEY` e `DB_PASSWORD` antes de subir o banco |
 
 ## Checklist para produção
 
 - `JWT_SECRET_KEY` aleatória, longa e fora do repositório
-- HTTPS em todo o tráfego
+- `DB_PASSWORD` própria, definida antes de criar o volume do banco
+- `.env` com acesso restrito no servidor
+- HTTPS em todo o tráfego, sem acesso direto à porta 8000
+- Backup do PostgreSQL agendado e guardado fora do servidor
 - `JWT_EXPIRATION_MINUTES` adequado ao risco
 - *Rate limit* em `/auth/token` e no cadastro
 - CORS restrito às origens necessárias
@@ -167,5 +177,6 @@ de permissão de cada recurso:
 | Transporte | Cabeçalho ausente e esquema diferente de `Bearer` |
 | Renovação | Token válido, ausente e expirado |
 | Permissões | Alterar ou excluir a conta e o carro de outro usuário; criar carro para outro dono |
+| Limites dos campos | Valores no limite aceitos e acima do limite recusados com `422`, na criação e no `PATCH` |
 
 Veja [Testes](testing.md).
