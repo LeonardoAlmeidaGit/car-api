@@ -62,7 +62,7 @@ em inglês:
 | `docs` | Documentação | `docs: add mkdocs configuration` |
 | `test` | Testes automatizados | `test: add unit tests with pytest` |
 | `style` | Formatação, sem mudança de comportamento | `style: apply ruff format and lint fixes` |
-| `build` | Sistema de build e dependências | `build(deps): add pytest and coverage` |
+| `build` | Sistema de build, dependências e Docker | `build: add Docker and PostgreSQL setup` |
 
 ## Pull requests
 
@@ -72,9 +72,14 @@ Antes de pedir revisão, confira:
 - `task test` passa sem erros, incluindo o lint.
 - O comportamento novo ou alterado tem testes, e a cobertura continua acima
   de 80%.
-- Mudanças em modelos incluem migração.
+- Mudanças em modelos incluem migração, aplicada no PostgreSQL local, e os
+  limites correspondentes nos schemas.
+- Mudanças em dependências, Dockerfiles ou `docker-compose.yml` foram
+  conferidas com `docker compose up -d --build`.
 - Nenhum segredo ou banco de dados foi incluído no commit.
 - A documentação foi atualizada.
+- O README foi atualizado, se a mudança altera a instalação, os comandos ou as
+  tecnologias.
 
 ## Versionamento
 

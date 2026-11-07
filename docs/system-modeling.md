@@ -9,7 +9,7 @@ erDiagram
 
     USERS {
         int id PK
-        string username UK
+        string username UK "até 30 caracteres na API"
         string password "hash Argon2"
         string email UK
         datetime created_at
@@ -43,6 +43,24 @@ erDiagram
         datetime updated_at
     }
 ```
+
+### Tamanho das colunas
+
+No PostgreSQL, `String(n)` vira `VARCHAR(n)`, e o banco recusa valores maiores.
+Os schemas repetem esses limites com `max_length` e `max_digits`, para que a API
+responda `422` em vez de deixar o erro chegar ao banco como `500`:
+
+| Coluna | Banco | Schema |
+| --- | --- | --- |
+| `users.username` | `VARCHAR`, sem limite | `max_length=30` |
+| `brands.name` | `VARCHAR(50)` | `max_length=50` |
+| `cars.model` | `VARCHAR(100)` | `max_length=100` |
+| `cars.color` | `VARCHAR(30)` | `max_length=30` |
+| `cars.plate` | `VARCHAR(10)` | Validador de 7 a 10 caracteres |
+| `cars.price` | `NUMERIC(10, 2)` | `max_digits=10`, `decimal_places=2` |
+
+`users.email` e `users.password` não têm limite no banco nem no schema. O
+`username` tem limite apenas na API.
 
 ### Relacionamentos
 
@@ -93,7 +111,7 @@ flowchart TB
     end
 
     Env[(".env")]
-    DB[("SQLite<br/>car.db")]
+    DB[("PostgreSQL 17.6")]
     Alembic["Alembic<br/>(migrations/)"]
 
     Client -->|"HTTP/JSON"| Routers
@@ -106,11 +124,49 @@ flowchart TB
     Database --> Settings
     Settings --> Env
     Models --> Database
-    Database -->|"aiosqlite"| DB
+    Database -->|"psycopg 3"| DB
     Alembic -->|"aplica o esquema"| DB
     Alembic --> Settings
     Alembic --> Models
 ```
+
+## Implantação em contêineres
+
+No Docker Compose, a aplicação e as migrações usam a mesma imagem e falam com o
+banco pela rede interna do Compose, pelo host `db`.
+
+```mermaid
+flowchart LR
+    Client["Cliente HTTP"]
+    Browser["Navegador"]
+
+    subgraph Host["Host"]
+        direction LR
+
+        subgraph Compose["Rede do Docker Compose"]
+            App["app<br/>fastapi run"]
+            Mig["migrations<br/>alembic upgrade head"]
+            DB[("db<br/>PostgreSQL 17.6")]
+            Docs["mkdocs<br/>Nginx"]
+        end
+
+        Vol[("volume<br/>postgres_data")]
+        Env[(".env")]
+    end
+
+    Client -->|"0.0.0.0:8000"| App
+    Browser -->|":8001"| Docs
+    App -->|"db:5432"| DB
+    Mig -->|"db:5432"| DB
+    DB --- Vol
+    Env -.->|"env_file e interpolação"| App
+    Env -.-> Mig
+    Env -.-> DB
+```
+
+A porta 5432 também é publicada, mas só em `127.0.0.1`, para a API rodando
+fora do Docker e para clientes de banco locais. Os detalhes estão em
+[Docker](docker.md).
 
 ## Fluxo de Autenticação
 
@@ -191,7 +247,7 @@ sequenceDiagram
     participant D as Banco de dados
 
     C->>R: POST /api/v1/cars/ (Bearer e CarSchema)
-    R->>R: Valida o corpo
+    R->>R: Valida o corpo, incluindo tamanhos e precisão do preço
     alt Dados inválidos
         R-->>C: 422 Unprocessable Entity
     end
@@ -322,7 +378,7 @@ flowchart TD
     Auth -->|"Usuário do token não existe mais"| E401
     Auth -->|Usuário identificado| Val
 
-    Val["Validação<br/>Pydantic"] -->|Dados inválidos| E422["422 Unprocessable Entity"]
+    Val["Validação<br/>Pydantic, com limites das colunas"] -->|Dados inválidos| E422["422 Unprocessable Entity"]
     Val -->|Dados válidos| Exists{"Registro alvo existe?"}
 
     Exists -->|Não| E404["404 Not Found"]

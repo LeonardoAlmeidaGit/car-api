@@ -1,6 +1,7 @@
 # API Endpoints
 
-URL base em desenvolvimento: `http://127.0.0.1:8000`.
+URL base em desenvolvimento: `http://127.0.0.1:8000`, tanto com `task run`
+quanto com o serviço `app` do Docker Compose.
 
 A documentação interativa está em `/docs` (Swagger UI) e `/redoc` (ReDoc), e o
 esquema OpenAPI em `/openapi.json`.
@@ -85,6 +86,52 @@ Erros de validação (`422`) detalham o campo com problema:
 }
 ```
 
+### Limites dos campos
+
+Os schemas limitam os textos e o preço aos tamanhos das colunas do banco. Um
+valor acima do limite é recusado com `422`, antes de chegar ao PostgreSQL:
+
+| Campo | Mínimo | Máximo |
+| --- | --- | --- |
+| `username` | 5 caracteres | 30 caracteres |
+| `password` | 8 caracteres | Sem limite |
+| `name` (marca) | 2 caracteres, após remover espaços nas pontas | 50 caracteres |
+| `model` (carro) | 2 caracteres, após remover espaços nas pontas | 100 caracteres |
+| `color` (carro) | 4 caracteres, após remover espaços nas pontas | 30 caracteres |
+| `plate` (carro) | 7 caracteres, após remover espaços nas pontas | 10 caracteres |
+| `price` (carro) | Maior que zero | 10 dígitos no total, com até 2 casas decimais: `99999999.99` |
+
+Os mesmos limites valem na criação e no `PATCH`.
+
+> **Espaços contam no limite máximo**
+>
+> O tamanho máximo de `name`, `model` e `color` é verificado **antes** de
+> remover os espaços nas pontas. Um nome de marca com 49 letras e dois espaços
+> em volta tem 51 caracteres e é recusado, mesmo que o valor gravado fosse
+> caber. A placa é diferente: o limite de 10 é verificado depois da remoção.
+
+Exemplos de resposta `422` para esses limites:
+
+```json
+{
+  "detail": [
+    {
+      "type": "string_too_long",
+      "loc": ["body", "name"],
+      "msg": "String should have at most 50 characters",
+      "input": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+      "ctx": {"max_length": 50}
+    }
+  ]
+}
+```
+
+| `type` | Causa |
+| --- | --- |
+| `string_too_long` | Texto acima do `max_length` |
+| `decimal_whole_digits` | Preço com mais de 8 dígitos antes da vírgula |
+| `decimal_max_places` | Preço com mais de 2 casas decimais |
+
 Erros comuns a todas as rotas protegidas:
 
 | Status | `detail` | Causa |
@@ -160,7 +207,7 @@ Rota pública. Resposta `201`.
 
 | Campo | Tipo | Obrigatório | Regras |
 | --- | --- | --- | --- |
-| `username` | string | Sim | Mínimo de 5 caracteres, único |
+| `username` | string | Sim | De 5 a 30 caracteres, único |
 | `email` | string | Sim | E-mail válido, único |
 | `password` | string | Sim | Mínimo de 8 caracteres |
 
@@ -247,7 +294,7 @@ Resposta `201`.
 
 | Campo | Tipo | Obrigatório | Padrão | Regras |
 | --- | --- | --- | --- | --- |
-| `name` | string | Sim | | Mínimo de 2 caracteres após remover espaços nas pontas, único |
+| `name` | string | Sim | | Mínimo de 2 caracteres após remover espaços nas pontas, máximo de 50, único |
 | `description` | string | Não | `null` | |
 | `is_active` | booleano | Não | `true` | |
 
@@ -356,14 +403,14 @@ Resposta `201`.
 
 | Campo | Tipo | Obrigatório | Padrão | Regras |
 | --- | --- | --- | --- | --- |
-| `model` | string | Sim | | Mínimo de 2 caracteres após remover espaços nas pontas |
+| `model` | string | Sim | | Mínimo de 2 caracteres após remover espaços nas pontas, máximo de 100 |
 | `factory_year` | inteiro | Sim | | De 1900 a 2030 |
 | `model_year` | inteiro | Sim | | De 1900 a 2030 |
-| `color` | string | Sim | | Mínimo de 4 caracteres após remover espaços nas pontas |
+| `color` | string | Sim | | Mínimo de 4 caracteres após remover espaços nas pontas, máximo de 30 |
 | `plate` | string | Sim | | De 7 a 10 caracteres, convertida para maiúsculas, única |
 | `fuel_type` | enum | Sim | | Veja os valores aceitos |
 | `transmission_type` | enum | Sim | | Veja os valores aceitos |
-| `price` | decimal | Sim | | Maior que zero |
+| `price` | decimal | Sim | | Maior que zero, até `99999999.99`, no máximo 2 casas decimais |
 | `description` | string | Não | `null` | |
 | `is_available` | booleano | Não | `true` | |
 | `brand_id` | inteiro | Sim | | Marca existente |
