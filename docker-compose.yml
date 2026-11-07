@@ -1,0 +1,53 @@
+services:
+  app:
+    build: .
+    image: car_api:latest
+    ports:
+      - "8000:8000"
+    environment:
+      PYTHONUNBUFFERED: "1"
+      DATABASE_URL: postgresql+psycopg://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_NAME}
+    env_file:
+      - .env
+    depends_on:
+      migrations:
+        condition: service_completed_successfully
+  
+  migrations:
+    build: .
+    image: car_api:latest
+    command: poetry run alembic upgrade head 
+    environment:
+      DATABASE_URL: postgresql+psycopg://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_NAME}
+    env_file:
+      - .env
+    depends_on:
+      db:
+        condition: service_healthy
+    
+  db:
+    image: postgres:17.6-bookworm
+    environment:
+      POSTGRES_DB: ${DB_NAME} 
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+    - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+  
+  mkdocks:
+    build:
+      context: .
+      dockerfile: Dockerfile.mkdocs
+    image: car-api-mkdocks:latest
+    ports:
+      - "8001:80"
+
+volumes:
+  postgres_data:

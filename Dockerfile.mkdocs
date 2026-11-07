@@ -1,0 +1,15 @@
+FROM python:3.14-alpine3.24 AS builder
+
+WORKDIR /docs
+
+COPY requirements_docs.txt .
+RUN pip install --no-cache-dir -r requirements_docs.txt
+
+COPY mkdocs.yml .
+COPY docs/ docs/
+
+RUN mkdocs build --strict
+
+FROM nginx:alpine AS production
+
+COPY --from=builder /docs/site /usr/share/nginx/html
