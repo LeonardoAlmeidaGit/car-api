@@ -42,11 +42,20 @@ def test_create_brand_already_exists(client, brand, auth_headers):
     assert response.json() == {'detail': 'Marca já cadastrada.'}
 
 
-@pytest.mark.parametrize('payload', [{'name': 'A'}, {'name': '   '}, {}])
+@pytest.mark.parametrize(
+    'payload', [{'name': 'A'}, {'name': '   '}, {'name': 'A' * 51}, {}]
+)
 def test_create_brand_invalid_payload(client, auth_headers, payload):
     response = client.post(URL, json=payload, headers=auth_headers)
 
     assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
+
+
+def test_create_brand_name_max_length(client, auth_headers):
+    response = client.post(URL, json={'name': 'A' * 50}, headers=auth_headers)
+
+    assert response.status_code == HTTPStatus.CREATED
+    assert response.json()['name'] == 'A' * 50
 
 
 def test_create_brand_requires_authentication(client):
@@ -169,12 +178,22 @@ def test_update_brand_not_found(client, auth_headers):
     assert response.status_code == HTTPStatus.NOT_FOUND
 
 
-def test_update_brand_invalid_name(client, brand, auth_headers):
+@pytest.mark.parametrize('name', ['X', 'X' * 51])
+def test_update_brand_invalid_name(client, brand, auth_headers, name):
     response = client.patch(
-        f'{URL}{brand.id}', json={'name': 'X'}, headers=auth_headers
+        f'{URL}{brand.id}', json={'name': name}, headers=auth_headers
     )
 
     assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
+
+
+def test_update_brand_name_max_length(client, brand, auth_headers):
+    response = client.patch(
+        f'{URL}{brand.id}', json={'name': 'B' * 50}, headers=auth_headers
+    )
+
+    assert response.status_code == HTTPStatus.OK
+    assert response.json()['name'] == 'B' * 50
 
 
 @pytest.mark.asyncio
