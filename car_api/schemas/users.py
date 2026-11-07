@@ -1,11 +1,11 @@
 from datetime import datetime
 from typing import List, Optional
 
-from pydantic import BaseModel, EmailStr, field_validator
+from pydantic import BaseModel, EmailStr, Field, field_validator
 
 
 class UserSchema(BaseModel):
-    username: str
+    username: str = Field(max_length=30)
     email: EmailStr
     password: str
 
@@ -31,7 +31,7 @@ class UserPublicSchema(BaseModel):
 
 
 class UserUpdateSchema(BaseModel):
-    username: Optional[str] = None
+    username: Optional[str] = Field(default=None, max_length=30)
     email: Optional[EmailStr] = None
     password: Optional[str] = None
 
