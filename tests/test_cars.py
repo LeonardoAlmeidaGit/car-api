@@ -60,12 +60,16 @@ def test_create_car_brand_not_found(client, car_payload, auth_headers):
     ('field', 'value'),
     [
         ('model', 'A'),
+        ('model', 'A' * 101),
         ('color', 'Az'),
+        ('color', 'A' * 31),
         ('plate', 'AB12'),
         ('plate', 'ABCDEFGHIJK'),
         ('factory_year', 1899),
         ('model_year', 2031),
         ('price', '0'),
+        ('price', '123456789.00'),
+        ('price', '100.123'),
         ('fuel_type', 'nuclear'),
         ('transmission_type', 'teleporte'),
     ],
@@ -78,6 +82,22 @@ def test_create_car_invalid_payload(
     response = client.post(URL, json=car_payload, headers=auth_headers)
 
     assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
+
+
+def test_create_car_max_lengths(client, car_payload, auth_headers):
+    car_payload.update({
+        'model': 'M' * 100,
+        'color': 'C' * 30,
+        'price': '99999999.99',
+    })
+
+    response = client.post(URL, json=car_payload, headers=auth_headers)
+
+    assert response.status_code == HTTPStatus.CREATED
+    data = response.json()
+    assert data['model'] == 'M' * 100
+    assert data['color'] == 'C' * 30
+    assert Decimal(data['price']) == Decimal('99999999.99')
 
 
 def test_create_car_requires_authentication(client, car_payload):
@@ -257,10 +277,14 @@ def test_update_car_not_found(client, auth_headers):
     'payload',
     [
         {'model': 'X'},
+        {'model': 'X' * 101},
         {'color': 'Az'},
+        {'color': 'A' * 31},
         {'plate': 'AB'},
         {'factory_year': 1800},
         {'price': '-10'},
+        {'price': '123456789.00'},
+        {'price': '100.123'},
     ],
 )
 def test_update_car_invalid_payload(client, car, auth_headers, payload):
@@ -269,6 +293,20 @@ def test_update_car_invalid_payload(client, car, auth_headers, payload):
     )
 
     assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
+
+
+def test_update_car_max_lengths(client, car, auth_headers):
+    response = client.patch(
+        f'{URL}{car.id}',
+        json={'model': 'M' * 100, 'color': 'C' * 30, 'price': '99999999.99'},
+        headers=auth_headers,
+    )
+
+    assert response.status_code == HTTPStatus.OK
+    data = response.json()
+    assert data['model'] == 'M' * 100
+    assert data['color'] == 'C' * 30
+    assert Decimal(data['price']) == Decimal('99999999.99')
 
 
 @pytest.mark.asyncio

@@ -79,16 +79,37 @@ def test_create_user_email_already_exists(client, user):
     'payload',
     [
         {'username': 'abc', 'email': 'a@a.com', 'password': 'senha12345'},
+        {'username': 'a' * 31, 'email': 'a@a.com', 'password': 'senha12345'},
         {'username': 'valido', 'email': 'invalido', 'password': 'senha12345'},
         {'username': 'valido', 'email': 'a@a.com', 'password': 'curta'},
         {'username': 'valido', 'email': 'a@a.com'},
     ],
-    ids=['username-curto', 'email-invalido', 'senha-curta', 'sem-senha'],
+    ids=[
+        'username-curto',
+        'username-longo',
+        'email-invalido',
+        'senha-curta',
+        'sem-senha',
+    ],
 )
 def test_create_user_invalid_payload(client, payload):
     response = client.post(URL, json=payload)
 
     assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
+
+
+def test_create_user_username_max_length(client):
+    response = client.post(
+        URL,
+        json={
+            'username': 'a' * 30,
+            'email': 'limite@teste.com',
+            'password': 'senha12345',
+        },
+    )
+
+    assert response.status_code == HTTPStatus.CREATED
+    assert response.json()['username'] == 'a' * 30
 
 
 def test_list_users(client, user, other_user, auth_headers):
@@ -254,7 +275,13 @@ def test_update_user_not_found(client, auth_headers):
 
 
 @pytest.mark.parametrize(
-    'payload', [{'username': 'abc'}, {'password': '123'}, {'email': 'x'}]
+    'payload',
+    [
+        {'username': 'abc'},
+        {'username': 'a' * 31},
+        {'password': '123'},
+        {'email': 'x'},
+    ],
 )
 def test_update_user_invalid_payload(client, user, auth_headers, payload):
     response = client.patch(
@@ -262,6 +289,15 @@ def test_update_user_invalid_payload(client, user, auth_headers, payload):
     )
 
     assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
+
+
+def test_update_user_username_max_length(client, user, auth_headers):
+    response = client.patch(
+        f'{URL}{user.id}', json={'username': 'b' * 30}, headers=auth_headers
+    )
+
+    assert response.status_code == HTTPStatus.OK
+    assert response.json()['username'] == 'b' * 30
 
 
 @pytest.mark.asyncio

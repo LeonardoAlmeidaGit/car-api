@@ -1,13 +1,14 @@
 # Testes
 
 O projeto tem uma suíte de testes automatizados com **pytest**, executada contra
-um banco SQLite em memória, separado do `car.db` da aplicação.
+um banco SQLite em memória. Ela não usa o PostgreSQL da aplicação, que não
+precisa estar no ar para os testes rodarem.
 
 | Item | Valor |
 | --- | --- |
 | Framework | pytest, com pytest-asyncio e pytest-cov |
 | Banco dos testes | `sqlite+aiosqlite:///:memory:`, recriado a cada teste |
-| Testes | 163 casos em 5 arquivos |
+| Testes | 181 casos em 5 arquivos |
 | Cobertura | 99% das linhas de `car_api/` |
 | Meta de cobertura | Acima de 80% |
 
@@ -62,6 +63,12 @@ xdg-open htmlcov/index.html            # no navegador (no WSL, use explorer.exe)
 
 `.coverage` e `htmlcov/` estão no `.gitignore` e não são versionados.
 
+### Testes e Docker
+
+Os testes rodam fora dos contêineres, com Poetry. A imagem da API não os
+inclui: o `.dockerignore` exclui `tests/`, e a imagem é instalada sem as
+dependências de desenvolvimento, como o pytest.
+
 ## Configuração
 
 Toda a configuração fica no `pyproject.toml`.
@@ -101,10 +108,11 @@ bem abaixo da real.
 ### Variáveis de ambiente
 
 Importar `car_api.app` instancia `Settings()`, então o `.env` (ou as variáveis
-de ambiente) precisa existir ao rodar os testes. Os valores de `DATABASE_URL`
-não são usados pelos testes, já que a sessão é substituída pela do banco em
-memória, mas as quatro variáveis continuam obrigatórias. Os tokens dos testes
-são assinados com o `JWT_SECRET_KEY` configurado.
+de ambiente) precisa existir ao rodar os testes. As quatro variáveis da
+aplicação continuam obrigatórias, mas o `DATABASE_URL` não é usado: a engine é
+criada a partir dele, porém o psycopg só se conecta na primeira consulta, e os
+testes substituem a sessão pela do banco em memória antes disso. Os tokens dos
+testes são assinados com o `JWT_SECRET_KEY` configurado.
 
 ## Como o banco de testes funciona
 
@@ -147,6 +155,27 @@ teste.
 > No SQLite, cada nova conexão a `:memory:` abre um banco **vazio**. O
 > `StaticPool` faz a engine reutilizar uma única conexão, garantindo que todas as
 > operações do teste enxerguem as mesmas tabelas e os mesmos dados.
+
+### SQLite nos testes e PostgreSQL na aplicação
+
+O SQLite em memória deixa a suíte rápida e independente do Docker, mas não se
+comporta exatamente como o PostgreSQL:
+
+| Comportamento | SQLite (testes) | PostgreSQL (aplicação) |
+| --- | --- | --- |
+| `String(n)` | Aceita textos maiores que `n` | Recusa com erro, que viraria `500` |
+| `Numeric(10, 2)` | Não impõe a precisão | Recusa valores fora da precisão |
+| `ilike` | Ignora maiúsculas só em letras sem acento | Ignora maiúsculas também em letras acentuadas |
+| Timestamps de `func.now()` | Horário UTC | Horário do fuso da sessão, que é UTC na imagem oficial do Postgres |
+
+Por isso, os limites de tamanho e de precisão são testados nos **schemas**, que
+recusam o valor com `422` antes de ele chegar ao banco. Os testes de
+`max_length` e `max_digits` verificam os dois lados do limite: o valor máximo é
+aceito e o valor logo acima é recusado.
+
+Mudanças que dependem do comportamento do banco, como uma migração nova, devem
+ser conferidas também no PostgreSQL, como descrito em
+[Verificação manual](#verificacao-manual).
 
 ## Fixtures disponíveis
 
@@ -199,9 +228,9 @@ make_token({'sub': '1'}, secret='chave-diferente-' * 4)  # assinatura inválida
 | --- | --- | --- |
 | `tests/test_db.py` | 15 | Conexão, banco em memória, criação das tabelas, isolamento entre testes, restrições de unicidade, valores padrão, relacionamentos, rollback e `get_session` |
 | `tests/test_auth.py` | 29 | Hash de senha, criação e validação de JWT, login, renovação, `get_current_user` com tokens inválidos, verificações de permissão e health check |
-| `tests/test_users.py` | 34 | CRUD de usuários, hash da senha, duplicidades, busca, paginação, permissões e exclusão bloqueada por carros |
-| `tests/test_brands.py` | 30 | CRUD de marcas, normalização do nome, filtros, paginação e exclusão bloqueada por carros |
-| `tests/test_cars.py` | 55 | CRUD de carros, regras de propriedade, transferência, validações do schema e todos os filtros da listagem |
+| `tests/test_users.py` | 38 | CRUD de usuários, hash da senha, duplicidades, limite de 30 caracteres do `username`, busca, paginação, permissões e exclusão bloqueada por carros |
+| `tests/test_brands.py` | 34 | CRUD de marcas, normalização do nome, limite de 50 caracteres do nome, filtros, paginação e exclusão bloqueada por carros |
+| `tests/test_cars.py` | 65 | CRUD de carros, regras de propriedade, transferência, validações do schema, limites de `model`, `color` e `price`, e todos os filtros da listagem |
 
 A contagem inclui cada caso de `@pytest.mark.parametrize`.
 
@@ -214,7 +243,7 @@ A contagem inclui cada caso de `@pytest.mark.parametrize`.
 | `car_api/routers/auth.py`, `brands.py`, `users.py` | 100% |
 | `car_api/routers/cars.py` | 99% |
 | `car_api/schemas/auth.py`, `brands.py`, `users.py` | 100% |
-| `car_api/schemas/cars.py` | 92% |
+| `car_api/schemas/cars.py` | 93% |
 | **Total** | **99%** |
 
 As linhas não cobertas são conhecidas:
@@ -223,6 +252,7 @@ As linhas não cobertas são conhecidas:
 | --- | --- |
 | `create_car`, em `routers/cars.py`: erro `Proprietário não encontrado` | **Inalcançável.** `verify_car_ownership` roda antes e exige que `owner_id` seja o usuário autenticado, que sempre existe. Candidata a remoção do código |
 | Validadores de `CarUpdateSchema`, em `schemas/cars.py`: ramos `if v is None` | Só são executados quando o cliente envia `null` explicitamente em `model`, `color`, `plate`, anos ou `price` |
+| `year_validation` de `CarUpdateSchema`: retorno de um ano válido | Nenhum teste de `PATCH` envia `factory_year` ou `model_year` dentro do intervalo |
 
 ## Escrevendo novos testes
 
@@ -313,31 +343,35 @@ def test_list_brands_filters(
 | Token de outro usuário, quando houver regra de propriedade | `403` |
 | ID inexistente | `404` |
 | Dados inválidos, um caso por regra do schema | `422` |
+| Valor no limite de `max_length` ou `max_digits` | `200` ou `201` |
+| Valor logo acima do limite | `422` |
 | Dados duplicados ou exclusão bloqueada | `400` |
 | Filtros e paginação, em listagens | `200` com a lista esperada |
 
 ## Verificação manual
 
-Os testes automatizados não substituem uma conferência rápida no Swagger UI
-quando a mudança afeta a documentação da API ou o formato das respostas:
+Os testes automatizados não substituem uma conferência no PostgreSQL quando a
+mudança afeta o banco, nem uma conferência rápida no Swagger UI quando afeta a
+documentação da API ou o formato das respostas.
 
-1. Inicie a API com `poetry run task run`.
-2. Em <http://127.0.0.1:8000/docs>, chame a rota alterada.
-
-Para não alterar o `car.db`, aponte para outro banco, já que variáveis de
-ambiente têm prioridade sobre o `.env`:
+Para conferir com o ambiente completo, como ele roda no Docker:
 
 ```bash
-export DATABASE_URL='sqlite+aiosqlite:////tmp/car_test.db'
-poetry run alembic upgrade head
-poetry run task run
+docker compose up -d --build
 ```
+
+Depois, em <http://127.0.0.1:8000/docs>, chame a rota alterada.
+
+Os dados criados ficam no volume do PostgreSQL local. Para descartá-los depois,
+recrie o banco com `docker compose down -v`, que apaga **todos** os dados
+locais.
 
 ## Problemas comuns
 
 | Sintoma | Causa provável | Solução |
 | --- | --- | --- |
 | `ValidationError` do Pydantic ao coletar os testes | `.env` ausente ou pytest executado fora da raiz | Crie o `.env` e rode a partir da raiz do projeto |
+| `No module named pytest` dentro do contêiner | A imagem não tem dependências de desenvolvimento | Rode os testes fora do Docker, com `poetry run task test` |
 | Testes não rodam e o Ruff mostra erros | `pre_test` executa o lint antes | Corrija com `poetry run task format` |
 | `no such table` em um teste novo | Engine sem `StaticPool` ou sessão criada fora das fixtures | Use as fixtures `session` e `client` |
 | Teste assíncrono é ignorado ou falha com *coroutine was never awaited* | Falta `@pytest.mark.asyncio` | Adicione o marcador |

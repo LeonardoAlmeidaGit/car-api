@@ -1,29 +1,32 @@
 # Car API
 
 API REST para gerenciamento de carros, marcas e usuários, construída com
-FastAPI, SQLAlchemy assíncrono e autenticação JWT.
+FastAPI, SQLAlchemy assíncrono, PostgreSQL e autenticação JWT.
 
 > **Versão documentada**
 >
-> Esta documentação descreve a versão **0.3.0** (`pyproject.toml`).
+> Esta documentação descreve a versão **0.4.0** (`pyproject.toml`).
 
 ## Início rápido
 
-Com Python 3.14 e Poetry instalados:
+Com Docker e o plugin Compose instalados:
 
 ```bash
 git clone https://github.com/LeonardoAlmeidaGit/fastapi_test.git
 cd fastapi_test
-poetry install
-cp .env.example .env        # depois, troque o valor de JWT_SECRET_KEY
-poetry run alembic upgrade head
-poetry run task run
+cp .env.example .env        # depois, troque JWT_SECRET_KEY e DB_PASSWORD
+docker compose up -d --build
 ```
 
-Para rodar a suíte de testes, que usa um banco em memória e não altera o
-`car.db`:
+O Compose sobe o PostgreSQL, aplica as migrações e inicia a API. Para
+desenvolver com Poetry e recarregamento automático, veja a
+[opção 2 da Instalação](installation.md#opcao-2-poetry-com-o-banco-no-docker).
+
+Para rodar a suíte de testes, que usa um SQLite em memória e não precisa do
+PostgreSQL:
 
 ```bash
+poetry install
 poetry run task test
 ```
 
@@ -35,8 +38,7 @@ Com o servidor no ar:
 | Swagger UI | <http://127.0.0.1:8000/docs> |
 | ReDoc | <http://127.0.0.1:8000/redoc> |
 | Health check | <http://127.0.0.1:8000/health_check> |
-
-O passo a passo completo está em [Instalação](installation.md).
+| Esta documentação | <http://127.0.0.1:8001> |
 
 ## Conteúdo
 
@@ -44,12 +46,15 @@ O passo a passo completo está em [Instalação](installation.md).
 
 - [Visão geral](overview.md): objetivo, funcionalidades e tecnologias.
 - [Pré-requisitos](prerequisites.md): o que instalar antes de começar.
-- [Instalação](installation.md): como colocar o projeto para rodar.
+- [Instalação](installation.md): como colocar o projeto para rodar, com ou sem
+  Docker.
 - [Configuração](configuration.md): variáveis de ambiente e ferramentas.
+- [Docker](docker.md): serviços, imagens e comandos do Compose.
 
 ### Referência
 
-- [API Endpoints](api-endpoints.md): rotas, parâmetros, respostas e erros.
+- [API Endpoints](api-endpoints.md): rotas, parâmetros, limites dos campos,
+  respostas e erros.
 - [Modelagem do Sistema](system-modeling.md): modelo de dados, arquitetura e
   fluxos em diagramas.
 - [Autenticação e Segurança](authentication.md): JWT, senhas, permissões e
@@ -68,10 +73,16 @@ O passo a passo completo está em [Instalação](installation.md).
 
 ## Visualizando esta documentação
 
-A documentação é gerada com MkDocs Material:
+A documentação é gerada com MkDocs Material. Com Poetry:
 
 ```bash
 poetry run task docs
 ```
 
-O site fica disponível em <http://127.0.0.1:8001>.
+Ou em contêiner, com o site já compilado e servido pelo Nginx:
+
+```bash
+docker compose up -d --build mkdocs
+```
+
+Nos dois casos, o site fica disponível em <http://127.0.0.1:8001>.

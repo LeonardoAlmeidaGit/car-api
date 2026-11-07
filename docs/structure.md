@@ -42,21 +42,30 @@
 │   └── test_users.py         # CRUD de usuários
 ├── .vscode/settings.json     # Gerenciador de ambientes no VS Code
 ├── .coverage                 # Dados de cobertura (não versionado)
+├── .dockerignore             # Arquivos fora do contexto de build do Docker
 ├── .env                      # Configuração local (não versionado)
 ├── .env.example              # Modelo do .env
 ├── .gitignore
-├── README.md                 # Atualmente vazio
+├── .readthedocs.yaml         # Build da documentação no Read the Docs
+├── Dockerfile                # Imagem da API (serviços app e migrations)
+├── Dockerfile.mkdocs         # Imagem da documentação (MkDocs + Nginx)
+├── README.md                 # Apresentação do projeto, com link para esta documentação
 ├── alembic.ini               # Configuração do Alembic
-├── car.db                    # Banco SQLite local (não versionado)
+├── car.db                    # Banco SQLite antigo, não usado com PostgreSQL (não versionado)
+├── docker-compose.yml        # Serviços db, migrations, app e mkdocs
 ├── htmlcov/                  # Relatório HTML de cobertura (não versionado)
 ├── mkdocs.yml                # Configuração da documentação
 ├── poetry.lock               # Versões travadas das dependências
-└── pyproject.toml            # Metadados, dependências, Ruff, pytest, coverage e taskipy
+├── pyproject.toml            # Metadados, dependências, Ruff, pytest, coverage e taskipy
+└── requirements_docs.txt     # Dependências da documentação, com versões fixas
 ```
 
 Os diretórios `core/`, `routers/` e `schemas/` não têm `__init__.py`. Eles
 funcionam como *namespace packages* do Python, e os imports absolutos, como
 `from car_api.core.settings import Settings`, funcionam normalmente.
+
+O `car.db` é o banco da época em que o projeto usava SQLite. Desde a mudança
+para o PostgreSQL, ele não é mais lido nem criado e pode ser apagado.
 
 ## Arquivos principais
 
@@ -68,7 +77,8 @@ ponto de entrada usado por `fastapi dev` e `fastapi run`.
 ### `car_api/core/database.py`
 
 Cria a engine assíncrona a partir de `DATABASE_URL` e expõe `get_session`, que
-abre uma `AsyncSession` por requisição.
+abre uma `AsyncSession` por requisição. O driver é escolhido pelo prefixo da
+URL: `postgresql+psycopg` na aplicação e `sqlite+aiosqlite` nos testes.
 
 ### `car_api/core/security.py`
 
@@ -100,15 +110,28 @@ Cria o banco SQLite em memória, substitui a dependência `get_session` no
 `TestClient` e define as fixtures de usuários, tokens, marcas e carros usadas
 pelos testes. Veja [Testes](testing.md#fixtures-disponiveis).
 
+### Arquivos do Docker
+
+| Arquivo | Conteúdo |
+| --- | --- |
+| `Dockerfile` | Imagem Alpine com Python 3.14 e Poetry, que roda a API como usuário `car_api` |
+| `Dockerfile.mkdocs` | Build em dois estágios: compila o site com MkDocs e o serve com Nginx |
+| `docker-compose.yml` | Serviços, dependências entre eles, portas e o volume `postgres_data` |
+| `.dockerignore` | Exclui segredos, caches, testes e o `car.db` da imagem |
+
+Veja [Docker](docker.md).
+
 ## Onde alterar cada coisa
 
 | Para... | Altere |
 | --- | --- |
 | Adicionar uma rota | `car_api/routers/` e, se for um recurso novo, `car_api/app.py` |
 | Mudar uma validação | `car_api/schemas/` |
-| Mudar uma tabela | `car_api/models/` e crie uma migração |
-| Adicionar uma configuração | `car_api/core/settings.py` e `.env.example` |
+| Mudar uma tabela | `car_api/models/`, crie uma migração e ajuste o `max_length` no schema |
+| Adicionar uma configuração | `car_api/core/settings.py`, `.env.example` e, se o contêiner precisar dela, `docker-compose.yml` |
 | Mudar uma regra de permissão | `car_api/core/security.py` |
 | Adicionar um teste | `tests/test_<recurso>.py`; fixtures compartilhadas em `tests/conftest.py` |
 | Adicionar uma tarefa | `[tool.taskipy.tasks]` em `pyproject.toml` |
+| Mudar a imagem ou os serviços | `Dockerfile`, `docker-compose.yml` e `.dockerignore` |
 | Adicionar uma página de documentação | `docs/` e `nav` em `mkdocs.yml` |
+| Atualizar o MkDocs | `pyproject.toml` e `requirements_docs.txt` |

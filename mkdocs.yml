@@ -16,6 +16,7 @@ nav:
   - Pré-requisitos: prerequisites.md
   - Instalação: installation.md
   - Configuração: configuration.md
+  - Docker: docker.md
   - Guidelines e padrões: guidelines.md
   - Estrutura: structure.md
   - API Endpoints: api-endpoints.md

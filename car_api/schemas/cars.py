@@ -2,7 +2,7 @@ from datetime import datetime
 from decimal import Decimal
 from typing import List, Optional
 
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, Field, field_validator
 
 from car_api.models.cars import FuelType, TransmissionType
 from car_api.schemas.brands import BrandPublicSchema
@@ -10,14 +10,14 @@ from car_api.schemas.users import UserPublicSchema
 
 
 class CarSchema(BaseModel):
-    model: str
+    model: str = Field(max_length=100)
     factory_year: int
     model_year: int
-    color: str
+    color: str = Field(max_length=30)
     plate: str
     fuel_type: FuelType
     transmission_type: TransmissionType
-    price: Decimal
+    price: Decimal = Field(max_digits=10, decimal_places=2)
     description: Optional[str] = None
     is_available: bool = True
     brand_id: int
@@ -56,14 +56,16 @@ class CarSchema(BaseModel):
 
 
 class CarUpdateSchema(BaseModel):
-    model: Optional[str] = None
+    model: Optional[str] = Field(default=None, max_length=100)
     factory_year: Optional[int] = None
     model_year: Optional[int] = None
-    color: Optional[str] = None
+    color: Optional[str] = Field(default=None, max_length=30)
     plate: Optional[str] = None
     fuel_type: Optional[FuelType] = None
     transmission_type: Optional[TransmissionType] = None
-    price: Optional[Decimal] = None
+    price: Optional[Decimal] = Field(
+        default=None, max_digits=10, decimal_places=2
+    )
     description: Optional[str] = None
     is_available: Optional[bool] = None
     brand_id: Optional[int] = None
