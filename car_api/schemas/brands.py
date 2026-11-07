@@ -1,11 +1,11 @@
 from datetime import datetime
 from typing import List, Optional
 
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, Field, field_validator
 
 
 class BrandSchema(BaseModel):
-    name: str
+    name: str = Field(max_length=50)
     description: Optional[str] = None
     is_active: bool = True
 
@@ -17,7 +17,7 @@ class BrandSchema(BaseModel):
 
 
 class BrandUpdateSchema(BaseModel):
-    name: Optional[str] = None
+    name: Optional[str] = Field(default=None, max_length=50)
     description: Optional[str] = None
     is_active: Optional[bool] = None
 
