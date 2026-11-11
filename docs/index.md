@@ -5,7 +5,7 @@ FastAPI, SQLAlchemy assíncrono, PostgreSQL e autenticação JWT.
 
 > **Versão documentada**
 >
-> Esta documentação descreve a versão **0.4.0** (`pyproject.toml`).
+> Esta documentação descreve a versão **1.0.0** (`pyproject.toml`).
 
 ## Início rápido
 

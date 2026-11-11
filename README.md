@@ -1,7 +1,7 @@
 # Car API
 
 [![CI](https://github.com/LeonardoAlmeidaGit/car-api/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/LeonardoAlmeidaGit/car-api/actions/workflows/ci.yml)
-![Versão](https://img.shields.io/badge/vers%C3%A3o-0.4.0-green)
+![Versão](https://img.shields.io/badge/vers%C3%A3o-1.0.0-green)
 ![Python](https://img.shields.io/badge/python-3.14-3776AB?logo=python&logoColor=white)
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.142-009688?logo=fastapi&logoColor=white)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-17.6-4169E1?logo=postgresql&logoColor=white)
