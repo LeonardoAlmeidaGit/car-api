@@ -1,9 +1,11 @@
 site_name: Car API
 site_description: Uma API REST completa para gerenciamento de carros e usuários
 site_author: Leonardo Almeida
+repo_url: https://github.com/LeonardoAlmeidaGit/car-api
+repo_name: LeonardoAlmeidaGit/car-api
 
 
-theme: 
+theme:
   name: material
   palette:
     primary: green
@@ -24,6 +26,7 @@ nav:
   - Autenticação e Segurança: authentication.md
   - Desenvolvimento: development.md
   - Testes: testing.md
+  - CI/CD: ci-cd.md
   - Deploy: deployment.md
   - Contribuição: contributing.md
   - Release Notes: release-notes.md

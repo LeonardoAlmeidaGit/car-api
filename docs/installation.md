@@ -14,8 +14,8 @@ Há duas formas de rodar o projeto:
 ### Clonar o repositório
 
 ```bash
-git clone https://github.com/LeonardoAlmeidaGit/fastapi_test.git
-cd fastapi_test
+git clone https://github.com/LeonardoAlmeidaGit/car-api.git
+cd car-api
 ```
 
 ### Criar o arquivo `.env`

@@ -1,6 +1,7 @@
 # Car API
 
-![Versão](https://img.shields.io/badge/vers%C3%A3o-0.4.0-green)
+[![CI](https://github.com/LeonardoAlmeidaGit/car-api/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/LeonardoAlmeidaGit/car-api/actions/workflows/ci.yml)
+![Versão](https://img.shields.io/badge/vers%C3%A3o-1.0.0-green)
 ![Python](https://img.shields.io/badge/python-3.14-3776AB?logo=python&logoColor=white)
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.142-009688?logo=fastapi&logoColor=white)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-17.6-4169E1?logo=postgresql&logoColor=white)
@@ -10,7 +11,8 @@
 API REST para gerenciamento de carros, marcas e usuários, construída com
 **FastAPI**, **SQLAlchemy assíncrono**, **PostgreSQL** e autenticação **JWT**.
 O ambiente completo (API, banco, migrações e documentação) sobe com um único
-comando do Docker Compose.
+comando do Docker Compose, e um pipeline no GitHub Actions testa cada pull
+request e publica cada versão como imagem Docker.
 
 ## Sumário
 
@@ -23,6 +25,7 @@ comando do Docker Compose.
 - [Endpoints](#endpoints)
 - [Exemplo de uso](#exemplo-de-uso)
 - [Testes e qualidade](#testes-e-qualidade)
+- [CI/CD](#cicd)
 - [Estrutura do projeto](#estrutura-do-projeto)
 - [Documentação](#documentação)
 - [Limitações conhecidas](#limitações-conhecidas)
@@ -49,6 +52,9 @@ comando do Docker Compose.
 - **Ambiente em contêineres** com Docker Compose: API, PostgreSQL, migrações e
   documentação.
 - **181 testes automatizados** com 99% de cobertura.
+- **CI/CD com GitHub Actions**: lint, testes e lint dos Dockerfiles em todo
+  pull request; a cada versão, imagens publicadas no GitHub Container Registry,
+  smoke test com PostgreSQL e GitHub Release automática.
 
 ## Tecnologias
 
@@ -66,6 +72,7 @@ comando do Docker Compose.
 | Tarefas | taskipy |
 | Dependências | Poetry 2 |
 | Contêineres | Docker e Docker Compose |
+| CI/CD | GitHub Actions, GitHub Container Registry (GHCR) e hadolint |
 | Documentação | MkDocs Material, servido por Nginx no contêiner |
 
 As versões exatas estão no `poetry.lock`, nos Dockerfiles e no
@@ -145,8 +152,8 @@ inclui segredos, testes nem dependências de desenvolvimento.
 **Pré-requisitos:** Git e Docker com o plugin Compose v2.
 
 ```bash
-git clone https://github.com/LeonardoAlmeidaGit/fastapi_test.git
-cd fastapi_test
+git clone https://github.com/LeonardoAlmeidaGit/car-api.git
+cd car-api
 cp .env.example .env
 ```
 
@@ -234,7 +241,7 @@ Definidas no `.env`, a partir do `.env.example`.
 | Variável | Uso | Exemplo |
 | --- | --- | --- |
 | `DATABASE_URL` | URL assíncrona do SQLAlchemy, usada fora do Docker | `postgresql+psycopg://car_api:senha@localhost:5432/car_api` |
-| `JWT_SECRET_KEY` | Chave de assinatura dos tokens | Valor aleatório longo |
+| `JWT_SECRET_KEY` | Chave de assinatura dos tokens, com pelo menos 32 caracteres | Valor aleatório, gerado como no início rápido |
 | `JWT_ALGORITHM` | Algoritmo de assinatura | `HS256` |
 | `JWT_EXPIRATION_MINUTES` | Validade do token, em minutos | `30` |
 | `DB_NAME` | Nome do banco criado pelo Compose | `car_api` |
@@ -322,8 +329,9 @@ O mesmo fluxo pode ser feito pelo Swagger UI, em
 ## Testes e qualidade
 
 A suíte usa **pytest** sobre um **SQLite em memória**, recriado a cada teste,
-e não precisa do PostgreSQL nem do Docker. O `.env` precisa existir, porque a
-aplicação lê as configurações ao ser importada.
+e não precisa do PostgreSQL nem do Docker. As quatro variáveis da aplicação
+precisam estar definidas, no `.env` ou no ambiente, porque a aplicação lê as
+configurações ao ser importada.
 
 ```bash
 poetry run task test
@@ -349,10 +357,51 @@ poetry run pytest -k "delete and not forbidden"
 Os testes não rodam dentro do contêiner: a imagem da API não inclui `tests/`
 nem as dependências de desenvolvimento.
 
+## CI/CD
+
+Dois workflows do GitHub Actions automatizam a verificação e a publicação:
+
+```mermaid
+flowchart LR
+    PR["Pull request ou push<br/>em develop/main"] --> CI["CI<br/>Ruff + pytest + hadolint"]
+    Tag["Push da tag vX.Y.Z"] --> Check["Confere a versão<br/>com o pyproject.toml"]
+    Check --> Test["Roda o CI"]
+    Test --> Build["Publica as imagens<br/>no GHCR"]
+    Build --> Smoke["Smoke test<br/>com PostgreSQL"]
+    Smoke --> Rel["GitHub Release"]
+```
+
+| Workflow | Quando roda | O que faz |
+| --- | --- | --- |
+| [`ci.yml`](.github/workflows/ci.yml) | Pull requests e pushes para `develop` e `main` | `task test` (Ruff, pytest e cobertura) e hadolint nos dois Dockerfiles |
+| [`release.yml`](.github/workflows/release.yml) | Push de uma tag `v*` | Confere a versão, reusa o CI, publica as imagens, sobe a stack com elas e cria a release |
+
+O smoke test sobe a API, as migrações e o PostgreSQL com as imagens recém
+publicadas e chama o `/health_check`. Ele cobre o que a suíte, em SQLite, não
+alcança: a imagem real conectando no banco real.
+
+Cada versão publicada fica disponível como imagem:
+
+```bash
+docker pull ghcr.io/leonardoalmeidagit/car-api:vX.Y.Z
+```
+
+Para subir a stack com as imagens publicadas, sem construir nada:
+
+```bash
+export COMPOSE_FILE=docker-compose.yml:docker-compose.release.yml
+IMAGE_TAG=vX.Y.Z docker compose pull app migrations mkdocs
+IMAGE_TAG=vX.Y.Z docker compose up -d --no-build
+```
+
+Os detalhes de cada job, as permissões e o que fazer se uma release falhar
+estão em [`docs/ci-cd.md`](docs/ci-cd.md).
+
 ## Estrutura do projeto
 
 ```text
 .
+├── .github/workflows/      # CI (ci.yml) e release (release.yml)
 ├── car_api/
 │   ├── app.py              # Aplicação FastAPI, routers e health check
 │   ├── core/               # Banco (engine e sessão), segurança e configurações
@@ -367,6 +416,7 @@ nem as dependências de desenvolvimento.
 ├── .readthedocs.yaml       # Build da documentação no Read the Docs
 ├── alembic.ini
 ├── docker-compose.yml      # Serviços db, migrations, app e mkdocs
+├── docker-compose.release.yml  # Usa as imagens publicadas no GHCR
 ├── Dockerfile              # Imagem da API
 ├── Dockerfile.mkdocs       # Imagem da documentação (MkDocs + Nginx)
 ├── mkdocs.yml
@@ -401,15 +451,18 @@ docker compose up -d --build mkdocs      # em contêiner, servida pelo Nginx
 | [Autenticação e Segurança](docs/authentication.md) | JWT, senhas, permissões e limitações |
 | [Desenvolvimento](docs/development.md) | Tarefas do dia a dia e migrações |
 | [Testes](docs/testing.md) | Suíte, fixtures, cobertura e como escrever testes |
-| [Deploy](docs/deployment.md) | Publicação, atualização e backup |
+| [CI/CD](docs/ci-cd.md) | Workflows, imagens publicadas e processo de release |
+| [Deploy](docs/deployment.md) | Publicação com imagens publicadas ou build, atualização e backup |
 | [Contribuição](docs/contributing.md) | Branches, commits, pull requests e versionamento |
 | [Release Notes](docs/release-notes.md) | Histórico de versões |
 
 ## Limitações conhecidas
 
-- Não há pipeline de CI/CD: testes e builds rodam localmente.
+- Não há deploy automático: as versões são publicadas como imagens, mas o
+  deploy em um servidor é manual.
 - Os testes usam SQLite, que não aplica todos os limites do PostgreSQL; por
-  isso os limites são validados nos schemas.
+  isso os limites são validados nos schemas. O smoke test da release usa
+  PostgreSQL, mas só confere se a aplicação sobe e responde.
 - Não há perfil de administrador: todo usuário autenticado pode gerenciar
   marcas.
 - Não há revogação de tokens nem limite de tentativas de login.
@@ -426,9 +479,11 @@ Os detalhes e o checklist para produção estão em
 3. Rode `poetry run task format` e `poetry run task test`.
 4. Use [Conventional Commits](https://www.conventionalcommits.org/pt-br/), em
    inglês, como `feat: add car search by year`.
-5. Abra um pull request para `develop`.
+5. Abra um pull request para `develop`. O merge só entra com o CI verde.
 
-O fluxo completo, incluindo o processo de release e tags, está em
+Para publicar uma versão, basta enviar a tag depois do merge em `main`: o
+workflow de release faz o resto. O fluxo completo, incluindo o processo de
+release e tags, está em
 [`docs/contributing.md`](docs/contributing.md). As mudanças de cada versão
 estão em [`docs/release-notes.md`](docs/release-notes.md).
 
