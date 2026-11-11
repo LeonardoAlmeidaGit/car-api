@@ -24,6 +24,9 @@ carros.
   migrações e a documentação.
 - **Testes automatizados**: suíte com pytest sobre um SQLite em memória, com
   cobertura acima de 80%.
+- **CI/CD**: GitHub Actions roda lint e testes em todo pull request e, a cada
+  versão, publica as imagens no GitHub Container Registry, testa a stack com
+  elas e cria a release.
 
 ## Regras de negócio
 
@@ -56,6 +59,7 @@ carros.
 | Tarefas | taskipy | 1.14.1 |
 | Testes | pytest / pytest-asyncio / pytest-cov | 9.2.0 / 1.4.1.post1 / 7.1.0 |
 | Documentação | MkDocs Material | 9.8.0 |
+| CI/CD | GitHub Actions, GitHub Container Registry e hadolint | Runner `ubuntu-26.04` |
 
 As versões das bibliotecas Python são as travadas no `poetry.lock`. As do
 PostgreSQL e das imagens base vêm do `docker-compose.yml` e dos Dockerfiles.
@@ -63,15 +67,19 @@ PostgreSQL e das imagens base vêm do `docker-compose.yml` e dos Dockerfiles.
 ## Situação atual do projeto
 
 O projeto tem testes automatizados para todas as rotas, com 99% de cobertura,
-e um ambiente Docker Compose que sobe a aplicação com PostgreSQL. Veja
-[Testes](testing.md) e [Docker](docker.md).
+um ambiente Docker Compose que sobe a aplicação com PostgreSQL e um pipeline
+de CI/CD no GitHub Actions. Veja [Testes](testing.md), [Docker](docker.md) e
+[CI/CD](ci-cd.md).
 
 Alguns itens comuns em projetos prontos para produção ainda não existem:
 
-- **CI/CD**: não há pipeline, então os testes só rodam localmente e as imagens
-  são construídas manualmente. Veja [Deploy](deployment.md).
+- **Deploy automático**: as versões são publicadas como imagens, mas não há
+  ambiente de produção definido. O deploy é feito manualmente, por versão.
+  Veja [Deploy](deployment.md).
 - **Testes em PostgreSQL**: a suíte roda em SQLite, que não aplica os mesmos
-  limites do banco de produção. Veja [Testes](testing.md#sqlite-nos-testes-e-postgresql-na-aplicacao).
+  limites do banco de produção. O smoke test da release sobe a aplicação com
+  PostgreSQL, mas só confere se ela responde. Veja
+  [Testes](testing.md#sqlite-nos-testes-e-postgresql-na-aplicacao).
 - **Perfis de acesso**: não há papel de administrador, por isso todo usuário
   autenticado tem as mesmas permissões sobre marcas.
 

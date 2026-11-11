@@ -12,8 +12,8 @@ FastAPI, SQLAlchemy assíncrono, PostgreSQL e autenticação JWT.
 Com Docker e o plugin Compose instalados:
 
 ```bash
-git clone https://github.com/LeonardoAlmeidaGit/fastapi_test.git
-cd fastapi_test
+git clone https://github.com/LeonardoAlmeidaGit/car-api.git
+cd car-api
 cp .env.example .env        # depois, troque JWT_SECRET_KEY e DB_PASSWORD
 docker compose up -d --build
 ```
@@ -67,6 +67,8 @@ Com o servidor no ar:
 - [Desenvolvimento](development.md): tarefas do dia a dia e migrações.
 - [Testes](testing.md): como rodar a suíte, fixtures, cobertura e como
   escrever novos testes.
+- [CI/CD](ci-cd.md): workflows do GitHub Actions, imagens publicadas e
+  processo de release.
 - [Deploy](deployment.md): como publicar a aplicação.
 - [Contribuição](contributing.md): branches, commits e pull requests.
 - [Release Notes](release-notes.md): histórico de versões.

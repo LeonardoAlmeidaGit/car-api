@@ -69,6 +69,16 @@ Os testes rodam fora dos contêineres, com Poetry. A imagem da API não os
 inclui: o `.dockerignore` exclui `tests/`, e a imagem é instalada sem as
 dependências de desenvolvimento, como o pytest.
 
+### Testes no CI
+
+O workflow de CI roda `poetry run task test` em todo pull request para
+`develop` ou `main` e em todo push nessas branches, em uma máquina
+`ubuntu-26.04` com Python 3.14 e Poetry 2.5.1. O relatório HTML fica
+disponível como artefato `coverage-html` na página da execução, por 1 dia.
+Veja [CI/CD](ci-cd.md#ci-ciyml).
+
+Uma falha no lint ou em qualquer teste deixa o check vermelho no pull request.
+
 ## Configuração
 
 Toda a configuração fica no `pyproject.toml`.
@@ -113,6 +123,11 @@ aplicação continuam obrigatórias, mas o `DATABASE_URL` não é usado: a engin
 criada a partir dele, porém o psycopg só se conecta na primeira consulta, e os
 testes substituem a sessão pela do banco em memória antes disso. Os tokens dos
 testes são assinados com o `JWT_SECRET_KEY` configurado.
+
+O `.env` não é obrigatório: no CI, que não tem o arquivo, as quatro variáveis
+são definidas no próprio workflow. Use um `JWT_SECRET_KEY` com pelo menos 32
+caracteres. Com menos, o PyJWT emite um `InsecureKeyLengthWarning` a cada token
+criado, e a saída dos testes fica cheia de avisos.
 
 ## Como o banco de testes funciona
 

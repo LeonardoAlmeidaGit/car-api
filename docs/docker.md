@@ -121,12 +121,38 @@ O `.dockerignore` exclui, entre outros, `.env`, `.git/`, `.venv`, caches,
 O build tem dois estágios:
 
 1. **`builder`**: instala as versões de `requirements_docs.txt` e roda
-   `mkdocs build --strict`. Um link quebrado ou uma página fora do `nav` faz o
-   build falhar.
+   `mkdocs build --strict`. Um link para uma página que não existe faz o build
+   falhar. Uma página fora do `nav` não falha o build: ela é gerada, mas não
+   aparece no menu.
 2. **`production`**: copia o site gerado para uma imagem `nginx:alpine`, que o
    serve na porta 80 do contêiner (8001 no host).
 
 A imagem final não tem Python nem MkDocs, só os arquivos estáticos.
+
+## Imagens publicadas e lint dos Dockerfiles
+
+As duas imagens também são publicadas no GitHub Container Registry a cada
+versão, pelo workflow de release:
+
+| Imagem local | Imagem publicada |
+| --- | --- |
+| `car_api:latest` | `ghcr.io/leonardoalmeidagit/car-api:vX.Y.Z` |
+| `car-api-mkdocs:latest` | `ghcr.io/leonardoalmeidagit/car-api-mkdocs:vX.Y.Z` |
+
+Para subir a stack com as imagens publicadas, sem construir nada, use o
+`docker-compose.release.yml` junto com o `docker-compose.yml`, como descrito em
+[Deploy](deployment.md#com-as-imagens-publicadas).
+
+Os dois Dockerfiles passam pelo [hadolint](https://github.com/hadolint/hadolint)
+em todo pull request. Para rodar localmente:
+
+```bash
+hadolint Dockerfile Dockerfile.mkdocs
+```
+
+O hadolint exige, por exemplo, a versão fixada nos pacotes do `apk add` e a
+opção `pipefail` em comandos com pipe. Por isso o `Dockerfile` usa
+`curl=<versão>` e `SHELL ["/bin/ash", "-o", "pipefail", "-c"]`.
 
 ## Comandos do dia a dia
 
