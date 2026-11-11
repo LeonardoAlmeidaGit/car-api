@@ -1,0 +1,9 @@
+services:
+  app:
+    image: ghcr.io/leonardoalmeidagit/car-api:${IMAGE_TAG:?set IMAGE_TAG, e.g. v0.5.0}
+
+  migrations:
+    image: ghcr.io/leonardoalmeidagit/car-api:${IMAGE_TAG:?set IMAGE_TAG, e.g. v0.5.0}
+
+  mkdocs:
+    image: ghcr.io/leonardoalmeidagit/car-api-mkdocs:${IMAGE_TAG:?set IMAGE_TAG, e.g. v0.5.0}
