@@ -2,14 +2,24 @@
 
 A forma suportada de publicar a aplicação é com as imagens Docker do projeto.
 O `docker-compose.yml` descreve o ambiente completo e serve de base para um
-servidor único. Ainda não há pipeline de CI/CD nem ambiente de produção
-definido no repositório.
+servidor único.
+
+Cada versão publicada gera imagens no GitHub Container Registry, testadas pelo
+workflow de release. O deploy em si é manual: o repositório não define um
+ambiente de produção. Veja [CI/CD](ci-cd.md).
+
+Há duas formas de subir a aplicação em um servidor:
+
+| Forma | Imagens | Quando usar |
+| --- | --- | --- |
+| [Imagens publicadas](#com-as-imagens-publicadas) | Baixadas do GHCR, na versão escolhida | Versões publicadas |
+| [Build no servidor](#publicando-com-docker-compose) | Construídas a partir do código | Versões sem imagem publicada ou com alterações locais |
 
 ## Antes de publicar
 
 1. Confira o [checklist de segurança](authentication.md#checklist-para-producao).
-2. Defina a versão a publicar e rode `poetry run task test` nela. Como não há
-   CI, essa verificação é manual.
+2. Confira se o CI e o workflow de release da versão terminaram com sucesso,
+   na aba **Actions** do repositório.
 3. Confira se todas as migrações estão versionadas em `migrations/versions/`.
 
 ## Banco de dados
@@ -32,8 +42,8 @@ serviço `db`.
 ### 1. Obter o código
 
 ```bash
-git clone https://github.com/LeonardoAlmeidaGit/fastapi_test.git
-cd fastapi_test
+git clone https://github.com/LeonardoAlmeidaGit/car-api.git
+cd car-api
 git checkout <versão>
 ```
 
@@ -99,11 +109,41 @@ banco voltem depois de uma falha ou de um reinício do servidor, adicione
 `restart: unless-stopped` aos serviços `app` e `db`. Não adicione ao
 `migrations`, que deve rodar uma vez e encerrar.
 
+## Com as imagens publicadas
+
+O `docker-compose.release.yml` troca as imagens de `app`, `migrations` e
+`mkdocs` pelas publicadas no GHCR. Portas, variáveis e healthcheck continuam
+vindo do `docker-compose.yml`. No servidor, bastam os dois arquivos do Compose
+e o `.env`: as imagens não são construídas.
+
+Com o `.env` configurado como no [passo 2](#2-configurar-o-ambiente):
+
+```bash
+export COMPOSE_FILE=docker-compose.yml:docker-compose.release.yml
+export IMAGE_TAG=vX.Y.Z
+docker compose pull app migrations
+docker compose up -d --no-build db migrations app
+```
+
+O `IMAGE_TAG` é obrigatório: sem ele, o Compose para com uma mensagem de erro.
+O `--no-build` garante que as imagens baixadas sejam usadas, e não
+reconstruídas a partir do código. Enquanto as imagens forem privadas, faça
+`docker login ghcr.io` antes do `pull`. Veja
+[Imagens publicadas](ci-cd.md#imagens-publicadas).
+
 ## Atualizando uma versão
 
 1. Faça backup do banco, como descrito abaixo.
 2. Atualize o código com `git fetch --tags` e `git checkout <versão>`.
-3. Reconstrua e suba os serviços:
+3. Suba os serviços na versão nova. Com as imagens publicadas:
+
+    ```bash
+    export IMAGE_TAG=<versão>
+    docker compose pull app migrations
+    docker compose up -d --no-build db migrations app
+    ```
+
+    Com build no servidor:
 
     ```bash
     docker compose up -d --build db migrations app
@@ -120,12 +160,12 @@ voltar o código, enquanto a imagem ainda conhece a migração nova:
 ```bash
 docker compose run --rm migrations poetry run alembic downgrade <revisão>
 git checkout <versão anterior>
-docker compose up -d --build db migrations app
 ```
 
-Se a versão não mudou o esquema, basta voltar o código e reconstruir. Como o
-downgrade pode perder dados, prefira restaurar o backup quando houver
-dúvida.
+Depois, suba a versão anterior como no passo 3: com as imagens publicadas,
+basta trocar o `IMAGE_TAG`. Se a versão não mudou o esquema, só esse passo é
+necessário. Como o downgrade pode perder dados, prefira restaurar o backup
+quando houver dúvida.
 
 ## Backup e restauração
 

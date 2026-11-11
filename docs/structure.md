@@ -40,6 +40,11 @@
 │   ├── test_cars.py          # CRUD de carros
 │   ├── test_db.py            # Conexão, tabelas e restrições do banco
 │   └── test_users.py         # CRUD de usuários
+├── .github/
+│   ├── actionlint.yaml       # Configuração do actionlint (runner ubuntu-26.04)
+│   └── workflows/
+│       ├── ci.yml            # Lint, testes e hadolint em pull requests e pushes
+│       └── release.yml       # Imagens no GHCR, smoke test e GitHub Release nas tags
 ├── .vscode/settings.json     # Gerenciador de ambientes no VS Code
 ├── .coverage                 # Dados de cobertura (não versionado)
 ├── .dockerignore             # Arquivos fora do contexto de build do Docker
@@ -53,6 +58,7 @@
 ├── alembic.ini               # Configuração do Alembic
 ├── car.db                    # Banco SQLite antigo, não usado com PostgreSQL (não versionado)
 ├── docker-compose.yml        # Serviços db, migrations, app e mkdocs
+├── docker-compose.release.yml # Troca as imagens pelas publicadas no GHCR
 ├── htmlcov/                  # Relatório HTML de cobertura (não versionado)
 ├── mkdocs.yml                # Configuração da documentação
 ├── poetry.lock               # Versões travadas das dependências
@@ -117,9 +123,20 @@ pelos testes. Veja [Testes](testing.md#fixtures-disponiveis).
 | `Dockerfile` | Imagem Alpine com Python 3.14 e Poetry, que roda a API como usuário `car_api` |
 | `Dockerfile.mkdocs` | Build em dois estágios: compila o site com MkDocs e o serve com Nginx |
 | `docker-compose.yml` | Serviços, dependências entre eles, portas e o volume `postgres_data` |
-| `.dockerignore` | Exclui segredos, caches, testes e o `car.db` da imagem |
+| `docker-compose.release.yml` | Override que usa as imagens publicadas no GHCR, na versão de `IMAGE_TAG` |
+| `.dockerignore` | Exclui segredos, caches, testes, os workflows e o `car.db` da imagem |
 
 Veja [Docker](docker.md).
+
+### Arquivos do CI/CD
+
+| Arquivo | Conteúdo |
+| --- | --- |
+| `.github/workflows/ci.yml` | Lint e testes com Poetry, e hadolint nos dois Dockerfiles |
+| `.github/workflows/release.yml` | Confere a versão, reusa o CI, publica as imagens, roda o smoke test e cria a release |
+| `.github/actionlint.yaml` | Declara o runner `ubuntu-26.04` para o actionlint |
+
+Veja [CI/CD](ci-cd.md).
 
 ## Onde alterar cada coisa
 
@@ -132,6 +149,7 @@ Veja [Docker](docker.md).
 | Mudar uma regra de permissão | `car_api/core/security.py` |
 | Adicionar um teste | `tests/test_<recurso>.py`; fixtures compartilhadas em `tests/conftest.py` |
 | Adicionar uma tarefa | `[tool.taskipy.tasks]` em `pyproject.toml` |
-| Mudar a imagem ou os serviços | `Dockerfile`, `docker-compose.yml` e `.dockerignore` |
+| Mudar a imagem ou os serviços | `Dockerfile`, `docker-compose.yml` e `.dockerignore`; se um serviço novo usar imagem própria, também `docker-compose.release.yml` e a matriz do `release.yml` |
+| Mudar o CI ou a release | `.github/workflows/` |
 | Adicionar uma página de documentação | `docs/` e `nav` em `mkdocs.yml` |
 | Atualizar o MkDocs | `pyproject.toml` e `requirements_docs.txt` |

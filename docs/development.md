@@ -43,7 +43,8 @@ task run
 6. Se a mudança afeta o banco, as dependências ou os Dockerfiles, confira o
    ambiente completo com `docker compose up -d --build`.
 7. Atualize a documentação, se necessário.
-8. Abra um pull request para `develop`.
+8. Abra um pull request para `develop`. O [CI](ci-cd.md#ci-ciyml) roda o lint,
+   os testes e o hadolint automaticamente.
 
 ## Migrações
 

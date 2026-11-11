@@ -13,7 +13,7 @@ pydantic-settings.
 | Variável | Tipo | Descrição | Exemplo |
 | --- | --- | --- | --- |
 | `DATABASE_URL` | `str` | URL assíncrona de conexão do SQLAlchemy | `postgresql+psycopg://car_api:senha@localhost:5432/car_api` |
-| `JWT_SECRET_KEY` | `str` | Chave usada para assinar os tokens | Valor aleatório longo |
+| `JWT_SECRET_KEY` | `str` | Chave usada para assinar os tokens, com pelo menos 32 caracteres | Valor aleatório, gerado como em [Gerando o `JWT_SECRET_KEY`](#gerando-o-jwt_secret_key) |
 | `JWT_ALGORITHM` | `str` | Algoritmo de assinatura | `HS256` |
 | `JWT_EXPIRATION_MINUTES` | `int` | Validade do token, em minutos | `30` |
 
@@ -33,7 +33,7 @@ Exemplo de `.env`, igual ao `.env.example`:
 
 ```dotenv
 DATABASE_URL='postgresql+psycopg://car_api:troque-esta-senha@localhost:5432/car_api'
-JWT_SECRET_KEY='troque-esta-chave'
+JWT_SECRET_KEY='troque-por-uma-chave-aleatoria-com-32-ou-mais-caracteres'
 JWT_ALGORITHM='HS256'
 JWT_EXPIRATION_MINUTES=30
 DB_NAME='car_api'
@@ -77,6 +77,19 @@ usam, mas o projeto é validado no PostgreSQL.
 > Quem conhece `JWT_SECRET_KEY` consegue gerar tokens válidos para qualquer
 > usuário. Nunca versione o `.env` (ele já está no `.gitignore` e no
 > `.dockerignore`) e não use em produção os valores do `.env.example`.
+
+### Gerando o `JWT_SECRET_KEY`
+
+O algoritmo `HS256` usa uma chave de 256 bits, ou seja, 32 bytes. Com uma chave
+menor, o PyJWT emite um `InsecureKeyLengthWarning` a cada token criado. Gere um
+valor aleatório com:
+
+```bash
+python3 -c "import secrets; print(secrets.token_urlsafe(64))"
+```
+
+O comando gera 86 caracteres, bem acima do mínimo. O valor do `.env.example` só
+tem o tamanho certo para não gerar o aviso: troque-o no seu `.env`.
 
 ## Alembic
 

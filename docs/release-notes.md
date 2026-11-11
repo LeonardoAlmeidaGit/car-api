@@ -4,6 +4,46 @@ O formato é inspirado no [Keep a Changelog](https://keepachangelog.com/pt-BR/),
 as versões seguem o [Versionamento Semântico](https://semver.org/lang/pt-BR/). As
 informações vêm das tags e do histórico do Git.
 
+## 1.0.0 (2026-11-11)
+
+Primeira versão estável: CI/CD com GitHub Actions e imagens publicadas no
+GitHub Container Registry.
+
+### Adicionado
+
+- Workflow de CI (`ci.yml`): Ruff, pytest com cobertura e hadolint nos dois
+  Dockerfiles em todo pull request e push para `develop` e `main` (#33).
+- Workflow de release (`release.yml`): no push de uma tag, confere a versão
+  com o `pyproject.toml`, reusa o CI, publica as imagens no GHCR, roda um smoke
+  test com PostgreSQL e cria a GitHub Release (#34).
+- `docker-compose.release.yml`, que sobe a stack com as imagens publicadas, na
+  versão definida em `IMAGE_TAG` (#34).
+- Página [CI/CD](ci-cd.md) na documentação e seção de CI/CD no README, com o
+  badge de status do CI.
+- Deploy com as imagens publicadas e rollback trocando o `IMAGE_TAG`, em
+  [Deploy](deployment.md).
+
+### Alterado
+
+- `Dockerfile` com a versão do `curl` fixada e `pipefail` no shell `ash`, como
+  exige o hadolint (#32).
+- `.dockerignore` exclui também `.github/` (#33).
+- `JWT_SECRET_KEY` do `.env.example` com mais de 32 caracteres, o mínimo para o
+  HS256 sem avisos do PyJWT.
+- Repositório renomeado de `fastapi_test` para `car-api`.
+- Versionamento a partir da 1.0.0 e processo de release pelo workflow, em
+  [Contribuição](contributing.md#versionamento).
+
+### Corrigido
+
+- A documentação dizia que uma página fora do `nav` faz o build do MkDocs
+  falhar; ela só não aparece no menu.
+
+### Mudanças incompatíveis
+
+- Nenhuma na API. A versão 1.0.0 marca a API como estável: a partir dela, uma
+  mudança incompatível exige uma nova versão `MAJOR`.
+
 ## 0.4.0 (2026-11-07)
 
 Docker, PostgreSQL e limites de tamanho nos schemas.

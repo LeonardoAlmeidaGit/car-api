@@ -17,6 +17,7 @@ flowchart LR
     Topic["feature/nova-rota"] -->|"Pull request"| Develop["develop"]
     Develop -->|"Pull request de release"| Main["main"]
     Main -->|"Tag"| Tag["vX.Y.Z"]
+    Tag -->|"Workflow de release"| Rel["Imagens no GHCR<br/>e GitHub Release"]
 ```
 
 ## Passo a passo
@@ -43,6 +44,8 @@ flowchart LR
 
 5. Atualize a documentação em `docs/`, se necessário.
 6. Faça o commit, envie a branch e abra um pull request para `develop`.
+7. Acompanhe o CI na página do pull request, ou com `gh pr checks --watch`.
+   O merge só deve ser feito com todos os checks verdes.
 
 ## Mensagens de commit
 
@@ -68,8 +71,11 @@ em inglês:
 
 Antes de pedir revisão, confira:
 
-- O título segue o padrão de commits.
+- O título segue o padrão de commits. Os títulos dos pull requests viram as
+  notas das GitHub Releases.
 - `task test` passa sem erros, incluindo o lint.
+- Mudanças nos Dockerfiles passam no `hadolint`, e mudanças nos workflows, no
+  actionlint. Veja [CI/CD](ci-cd.md#validando-antes-do-push).
 - O comportamento novo ou alterado tem testes, e a cobertura continua acima
   de 80%.
 - Mudanças em modelos incluem migração, aplicada no PostgreSQL local, e os
@@ -83,27 +89,43 @@ Antes de pedir revisão, confira:
 
 ## Versionamento
 
-O projeto segue o [Versionamento Semântico](https://semver.org/lang/pt-BR/). Ainda
-na série `0.x`, novas funcionalidades incrementam o número do meio.
+O projeto segue o [Versionamento Semântico](https://semver.org/lang/pt-BR/),
+no formato `MAJOR.MINOR.PATCH`:
+
+| Parte | Quando incrementa | Exemplo |
+| --- | --- | --- |
+| `MAJOR` | Mudança incompatível na API, como remover uma rota ou um campo | `1.4.2` → `2.0.0` |
+| `MINOR` | Funcionalidade nova, compatível com as anteriores | `1.4.2` → `1.5.0` |
+| `PATCH` | Correção, sem mudança de comportamento esperado | `1.4.2` → `1.4.3` |
+
+Nas versões `0.x`, a API ainda podia mudar a qualquer momento. A partir da
+`1.0.0`, uma mudança incompatível exige um novo `MAJOR`.
 
 Para publicar uma versão:
 
-1. Em uma branch a partir de `develop`, atualize `version` no `pyproject.toml`,
-   com o commit `chore: bump version to X.Y.Z`.
+1. Em uma branch a partir de `develop`, atualize a versão com
+   `poetry version X.Y.Z` e também em `docs/index.md` e no badge do
+   `README.md`, com o commit `chore: bump version to X.Y.Z`.
 2. Atualize as [Release Notes](release-notes.md).
 3. Faça o merge em `develop` e, depois, abra o pull request de `develop` para
    `main`.
-4. **Depois do merge em `main`**, atualize a branch local e crie a tag anotada:
+4. **Depois do merge em `main`**, atualize a branch local, confira a versão e
+   crie a tag anotada:
 
     ```bash
     git switch main
     git pull
+    git show HEAD:pyproject.toml | grep '^version'
     git tag -a vX.Y.Z -m "Release vX.Y.Z: resumo"
     git push origin vX.Y.Z
     ```
 
-Antes de enviar a tag, confira se ela contém a versão correta:
+5. O push da tag dispara o workflow de release, que confere a versão, roda o
+   CI, publica as imagens, testa a stack e cria a GitHub Release. Acompanhe
+   com `gh run watch`.
 
-```bash
-git show vX.Y.Z:pyproject.toml | grep '^version'
-```
+Não crie a GitHub Release manualmente: o workflow cria a release e falha se
+ela já existir. Se o `pyproject.toml` não tiver a mesma versão da tag, o
+workflow para antes de publicar qualquer imagem. Veja
+[CI/CD](ci-cd.md#publicando-uma-versao) e, se algo falhar,
+[Se a release falhar](ci-cd.md#se-a-release-falhar).
