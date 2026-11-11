@@ -24,6 +24,7 @@ nav:
   - Autenticação e Segurança: authentication.md
   - Desenvolvimento: development.md
   - Testes: testing.md
+  - CI/CD: ci-cd.md
   - Deploy: deployment.md
   - Contribuição: contributing.md
   - Release Notes: release-notes.md
